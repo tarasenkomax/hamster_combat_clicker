@@ -1,7 +1,7 @@
 from random import choice
 
 from config import ACCOUNTS, FEATURES
-from hamster_client import BOOST_ENERGY, HamsterClient, sleep, logging
+from hamster_client import BOOST_ENERGY, HamsterClient, logging, sleep
 from strings import DELIMITER
 
 clients = [HamsterClient(**options) for options in ACCOUNTS]
