@@ -67,7 +67,6 @@ def check_proxy(proxies):
 
 
 class HamsterClient(Session):
-    name = None
     state = None
     boosts = None
     upgrades = None
@@ -110,7 +109,7 @@ class HamsterClient(Session):
         try:
             response = self.post(url=URL_SYNC)
             self.state = response.json()["clickerUser"]
-        except Exception as e:
+        except Exception:
             pass
 
     def check_task(self):
@@ -122,9 +121,11 @@ class HamsterClient(Session):
 
     def tap(self):
         taps_count = self.available_taps or self.recover_per_sec
-        data = {"count": taps_count,
-                "availableTaps": self.available_taps - taps_count,
-                "timestamp": timestamp()}
+        data = {
+            "count": taps_count,
+            "availableTaps": self.available_taps - taps_count,
+            "timestamp": timestamp()
+        }
         self.post(URL_TAP, json=data).json()
         logging.info(self.log_prefix + MSG_TAP.format(taps_count=taps_count))
 
@@ -133,7 +134,10 @@ class HamsterClient(Session):
         self.post(URL_BUY_BOOST, json=data)
 
     def upgrade(self, upgrade_name):
-        data = {"upgradeId": upgrade_name, "timestamp": timestamp()}
+        data = {
+            "upgradeId": upgrade_name,
+            "timestamp": timestamp()
+        }
         return self.post(URL_BUY_UPGRADE, json=data)
 
     def upgrades_list(self):
@@ -177,7 +181,7 @@ class HamsterClient(Session):
 
     def get_sorted_upgrades(self, method):
         """
-            1. Фильтруем карточки 
+            1. Фильтруем карточки
                 - доступные для покупки
                 - не просроченные
                 - с пассивным доходом
@@ -201,7 +205,7 @@ class HamsterClient(Session):
                     item.pop('condition')
                 prepared.append(item)
         if prepared:
-            sorted_items = [i for i in methods[method](prepared)]  # if i['price'] <= self.balance]
+            sorted_items = [i for i in methods[method](prepared)]
             return sorted_items
         return []
 

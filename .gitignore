@@ -24,6 +24,7 @@ logs
 
 # Environments
 config/.env
+.env
 
 # Unit test / coverage reports
 htmlcov/
