@@ -117,7 +117,7 @@ class HamsterClient(Session):
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
             logging.info(MSG_CRYPTED_CIPHER.format(cipher=raw_cipher))
-            re_result = re.search('\d+', raw_cipher[3:])
+            re_result = re.search('\d+', raw_cipher[3:])  # noqa W605
             if re_result:
                 str_len = re_result[0]
                 raw_cipher = raw_cipher.replace(str_len, "", 1)
