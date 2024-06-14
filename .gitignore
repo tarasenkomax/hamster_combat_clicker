@@ -1,0 +1,64 @@
+# Local #
+.python-version
+local_data/
+
+# Python #
+*.py[cod]
+*$py.class
+
+
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+/static
+logs
+
+# IDE #
+.idea/
+.vscode/
+
+
+# Environments
+config/.env
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Distribution / packaging
+.Python build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+
+#Celery beat
+celerybeat-schedule
+
+# Linters
+
+.mypy_cache/
