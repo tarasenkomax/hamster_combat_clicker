@@ -18,7 +18,7 @@ async def main():
                 await account.apply_boost()
             logging.info(account.log_prefix + " ".join(f"{k}: {v} |" for k, v in account.stats.items()))
             print(' ')
-        print('-'*100)
+        print('-'*120)
         sleep(60)
 
 
