@@ -1,30 +1,61 @@
-"""
-    ACCOUNTS:
-        name -> Имя аккаунта, отображаемое в логе
-        token -> Brearer токен аккаунта
-        proxies -> настройки прокси, "кто знает - тот поймет". Если не нужен прокси, лучше убрать
-        buy_upgrades -> управление покупкой карточек.
-            True -> Включено,
-            False -> Выключено
-        buy_decision_method -> метод покупки карточек (
-            - price -> покупать самую дешевую
-            - payback -> покупать ту, что быстрей всего окупится
-            - profit -> покупать самую прибыльну
-            - profitness -> покупать самую профитную (сколько добыча на каждый потраченный хома-рубль)
-            )
-"""
+HEADERS = {
+    "Connection": "keep-alive",
+    "sec-ch-ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Android WebView";v="122"',
+    "sec-ch-ua-mobile": '?1',
+    "User-Agent": "Mozilla/5.0 (Linux; Android 11; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/122.0.6261.64 Mobile Safari/537.36", # noqa E501
+    "sec-ch-ua-platform": '"Android"',
+    "Accept": "*/*",
+    "Origin": "https://hamsterkombat.io",
+    "X-Requested-With": "org.telegram.messenger",
+    "Sec-Fetch-Site": "same-site",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": "empty",
+    "Referer": "https://hamsterkombat.io/",
+    "Accept-Encoding": "gzip, deflate, br",
+}
 
-ACCOUNTS = [
-    {
-        "name": "m",
-        "token": "1718258846672jWREfRSgL4yNjHPDli8Uxw7MMQHByewbJ4HMBWTUmA0CH1KhKNktAwff2QDC2xyE398277120",
-        "buy_upgrades": False,
-        "buy_decision_method": "profitness",
-    },
-    {
-        "name": "t",
-        "token": "17184376542545fCPKS5wju3SUKLnPzk6k3PwlEiDjZmm8uiZrLlI4qMTyxhph4GSfnoqE6ya592x1350814077",
-        "buy_upgrades": False,
-        "buy_decision_method": "profitness",
-    },
-]
+MORSE_CODE_DICT = {
+    'A': '.-',
+    'B': '-...',
+    'C': '-.-.',
+    'D': '-..',
+    'E': '.',
+    'F': '..-.',
+    'G': '--.',
+    'H': '....',
+    'I': '..',
+    'J': '.---',
+    'K': '-.-',
+    'L': '.-..',
+    'M': '--',
+    'N': '-.',
+    'O': '---',
+    'P': '.--.',
+    'Q': '--.-',
+    'R': '.-.',
+    'S': '...',
+    'T': '-',
+    'U': '..-',
+    'V': '...-',
+    'W': '.--',
+    'X': '-..-',
+    'Y': '-.--',
+    'Z': '--..',
+    '1': '.----',
+    '2': '..---',
+    '3': '...--',
+    '4': '....-',
+    '5': '.....',
+    '6': '-....',
+    '7': '--...',
+    '8': '---..',
+    '9': '----.',
+    '0': '-----',
+    ', ': '--..--',
+    '.': '.-.-.-',
+    '?': '..--..',
+    '/': '-..-.',
+    '-': '-....-',
+    '(': '-.--.',
+    ')': '-.--.-',
+}
