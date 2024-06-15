@@ -17,6 +17,8 @@ async def main():
             if await account.is_taps_boost_available:
                 await account.apply_boost()
             logging.info(account.log_prefix + " ".join(f"{k}: {v} |" for k, v in account.stats.items()))
+            print(' ')
+        print('-'*100)
         sleep(60)
 
 
