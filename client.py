@@ -5,45 +5,32 @@ from http import HTTPStatus
 from time import sleep, time
 from typing import Dict, Union
 
-from requests import Response, Session
+import aiohttp
 
 from config import HEADERS, MORSE_CODE_DICT
 from enums import MessageEnum, UrlsEnum
-from mixins import TimestampMixin, CardSorterMixin
+from mixins import CardSorterMixin, TimestampMixin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
 
 
-def retry(func):
-    def wrapper(*args, **kwargs):
-        while True:
-            try:
-                result = func(*args, **kwargs)
-                if result.status_code in (HTTPStatus.OK, HTTPStatus.CREATED, HTTPStatus.ACCEPTED):
-                    return result
-                else:
-                    logging.info(MessageEnum.MSG_BAD_RESPONSE.format(status=result.status_code, text=result.text))
-                    sleep(10)
-            except Exception as error:
-                logging.error(MessageEnum.MSG_SESSION_ERROR.format(error=error))
-                sleep(1)
-
-    return wrapper
-
-
-class HamsterClient(Session, TimestampMixin, CardSorterMixin):
+class HamsterClient(TimestampMixin, CardSorterMixin):
     state: Dict = None
     boosts: Dict = None
     upgrades: Dict = None
     task_checked_at: float = None
 
     def __init__(self, token, name="NoName", **kwargs) -> None:
-        super().__init__()
+        self.token: str = token
         self.features = kwargs
-        self.headers: Dict = HEADERS.copy()
-        self.headers["Authorization"]: str = f"Bearer {token}"
-        self.request = retry(super().request)
         self.name: str = name
+        self._session = aiohttp.ClientSession(headers=self._headers)
+
+    @property
+    def _headers(self) -> Dict:
+        headers: Dict = HEADERS.copy()
+        headers["Authorization"]: str = f"Bearer {self.token}"
+        return headers
 
     @property
     def balance(self) -> Union[int, None]:
@@ -70,11 +57,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             return self.state["tapsRecoverPerSec"]
 
     @property
-    def is_taps_boost_available(self) -> Union[bool, None]:
+    async def is_taps_boost_available(self) -> Union[bool, None]:
         """ Проверка, доступны ли усиления """
-        self.update_boosts_list()
+        await self.update_boosts_list()
         if not self.boosts:
-            return
+            return False
         for boost in self.boosts["boostsForBuy"]:
             if (
                 boost["id"] == 'BoostFullAvailableTaps'
@@ -98,9 +85,9 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         """ Префикс с именем пользователя для логирования """
         return f"[{self.name}]\t "
 
-    def get_cipher_data(self) -> Dict:
+    async def get_cipher_data(self) -> Dict:
         """
-        Получить информацио о морзянке
+        Получить информацио о шифре
 
         Example:
             {
@@ -110,12 +97,14 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 'remainSeconds': 27144
             }
         """
-        result = self.post(url=UrlsEnum.CONFIG).json()
-        return result['dailyCipher']
+        async with self._session.request(method="POST", url=UrlsEnum.CONFIG) as response:
+            response.raise_for_status()
+            response_data = await response.json()
+            return response_data['dailyCipher']
 
-    def claim_daily_cipher(self) -> None:
-        """ Разгадываем морзянку """
-        cipher_data = self.get_cipher_data()
+    async def claim_daily_cipher(self) -> None:
+        """ Разгадать шифр """
+        cipher_data = await self.get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
             logging.info(MessageEnum.MSG_CRYPTED_CIPHER.format(cipher=raw_cipher))
@@ -127,38 +116,44 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 cipher = b64decode(raw_cipher).decode()
                 morse_cipher = "  ".join((MORSE_CODE_DICT.get(char, " ") for char in cipher))
                 logging.info(MessageEnum.MSG_CIPHER.format(cipher=cipher + " | " + morse_cipher))
-                self.post(url=UrlsEnum.CLAIM_DAILY_CIPHER, json={"cipher": cipher})
+                async with self._session.request(method="POST", url=UrlsEnum.CLAIM_DAILY_CIPHER) as response:
+                    response.raise_for_status()
 
-    def sync(self) -> None:
+    async def sync(self) -> None:
         """ Обновить данные о пользователе """
         try:
-            response = self.post(url=UrlsEnum.SYNC)
-            self.state = response.json()["clickerUser"]
-            logging.info(self.log_prefix + MessageEnum.MSG_SYNC)
+            async with self._session.request(method="POST", url=UrlsEnum.SYNC) as response:
+                response.raise_for_status()
+                response_data = await response.json()
+                self.state = response_data["clickerUser"]
+                logging.info(self.log_prefix + MessageEnum.MSG_SYNC)
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
 
-    def check_task(self) -> None:
-        """ Получение ежедневной награды """
+    async def check_task(self) -> None:
+        """ Получить ежедневную награду """
         data = {
             "taskId": "streak_days"
         }
         if not self.task_checked_at or time() - self.task_checked_at >= 60 * 60:
-            self.post(url=UrlsEnum.CHECK_TASK, json=data)
-            self.task_checked_at = time()
+            async with self._session.request(method="POST", url=UrlsEnum.CHECK_TASK, json=data) as response:
+                response.raise_for_status()
+                self.task_checked_at = time()
 
-    def tap(self) -> None:
-        """ Тапаем на монеты максимальное кол-во раз """
+    async def tap(self) -> None:
+        """ Тапнуть на монеты максимальное кол-во раз """
         taps_count = self.available_taps or self.recover_per_sec
         data = {
             "count": taps_count,
             "availableTaps": self.available_taps - taps_count,
             "timestamp": self.timestamp()
         }
-        self.post(url=UrlsEnum.TAP, json=data).json()
-        logging.info(self.log_prefix + MessageEnum.MSG_TAP.format(taps_count=taps_count))
 
-    def apply_boost(self, boost_name='BoostFullAvailableTaps') -> None:
+        async with self._session.request(method="POST", url=UrlsEnum.TAP, json=data) as response:
+            response.raise_for_status()
+            logging.info(self.log_prefix + MessageEnum.MSG_TAP.format(taps_count=taps_count))
+
+    async def apply_boost(self, boost_name='BoostFullAvailableTaps') -> None:
         """
         Взять усиление
         :param boost_name: название усиления
@@ -167,9 +162,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             "boostId": boost_name,
             "timestamp": self.timestamp()
         }
-        self.post(url=UrlsEnum.BUY_BOOST, json=data)
+        async with self._session.request(method="POST", url=UrlsEnum.BUY_BOOST, json=data) as response:
+            response.raise_for_status()
 
-    def upgrade_card(self, upgrade_name) -> Response:
+    async def upgrade_card(self, upgrade_name) -> Dict:
         """
         Купить карточку
         :param upgrade_name: название карточки
@@ -178,30 +174,42 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             "upgradeId": upgrade_name,
             "timestamp": self.timestamp()
         }
-        response = self.post(url=UrlsEnum.BUY_UPGRADE, json=data)
-        return response
 
-    def upgrades_list(self) -> None:
+        async with self._session.request(method="POST", url=UrlsEnum.BUY_UPGRADE, json=data) as response:
+            response.raise_for_status()
+            response_code = response.status
+            response_data = await response.json()
+
+            return dict(
+                status_code=response_code,
+                data=response_data
+            )
+
+    async def upgrades_list(self) -> None:
         """ Обновить список карточек """
-        self.upgrades = self.post(url=UrlsEnum.UPGRADES_FOR_BUY).json()
+        async with self._session.request(method="POST", url=UrlsEnum.UPGRADES_FOR_BUY) as response:
+            response.raise_for_status()
+            self.upgrades = await response.json()
 
-    def update_boosts_list(self) -> None:
+    async def update_boosts_list(self) -> None:
         """
         Обновить список усилиений
          - BoostEarnPerTap
          - BoostMaxTaps
          - BoostFullAvailableTaps
          """
-        self.boosts = self.post(url=UrlsEnum.BOOSTS_FOR_BUY).json()
+        async with self._session.request(method="POST", url=UrlsEnum.BOOSTS_FOR_BUY) as response:
+            response.raise_for_status()
+            self.boosts = await response.json()
 
     def get_sorted_upgrades(self, method):
         """
-            1. Фильтруем карточки
+            1. Отфильтровать карточки
                 - доступные для покупки
                 - не просроченные
                 - с пассивным доходом
                 - без ожидания перезарядки
-            2. Сортируем по профитности на каждую потраченную монету
+            2. Отсортировать в соответствии с выбранным методом
         """
         methods = dict(
             payback=self.sorted_by_payback,
@@ -226,17 +234,18 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             return sorted_items
         return []
 
-    def buy_upgrades(self) -> None:
+    async def buy_upgrades(self) -> None:
         """ Покупаем лучшие апгрейды на все монеты """
         if self.features['buy_upgrades']:
             while True:
-                self.upgrades_list()
+                await self.upgrades_list()
                 if sorted_upgrades := self.get_sorted_upgrades(self.features['buy_decision_method']):
                     upgrade = sorted_upgrades[0]
                     if upgrade['price'] <= self.balance:
-                        result = self.upgrade_card(upgrade['id'])
-                        if result.status_code == HTTPStatus.OK:
-                            self.state = result.json()["clickerUser"]
+                        result = await self.upgrade_card(upgrade['id'])
+                        if result['status_code'] == HTTPStatus.OK:
+                            result_data = result['data']
+                            self.state = result_data["clickerUser"]
                         logging.info(self.log_prefix + MessageEnum.MSG_BUY_UPGRADE.format(**upgrade))
                         sleep(1)
                     else:
@@ -244,17 +253,19 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 else:
                     break
         else:
-            self.upgrades_list()
+            await self.upgrades_list()
 
-    def claim_combo_reward(self) -> None:
-        """ Получаем награду, если собрано комбо """
+    async def claim_combo_reward(self) -> None:
+        """ Получить награду, если собрано комбо """
         combo = self.upgrades.get('dailyCombo', {})
         upgrades = combo.get('upgradeIds', [])
         combo_cards = ", ".join(upgrades)
         logging.info(self.log_prefix + MessageEnum.MSG_CLAIMED_COMBO_CARDS.format(cards=combo_cards or '-'))
         if combo and len(upgrades) == 3:
             if combo.get('isClaimed') is False:
-                result = self.post(url=UrlsEnum.CLAIM_DAILY_COMBO)
-                if result.status_code == HTTPStatus.OK:
-                    self.state = result.json()["clickerUser"]
-                    logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
+
+                async with self._session.request(method="POST", url=UrlsEnum.CLAIM_DAILY_COMBO) as response:
+                    response.raise_for_status()
+                    if response.status == HTTPStatus.OK:
+                        self.state = await response.json()["clickerUser"]
+                        logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
