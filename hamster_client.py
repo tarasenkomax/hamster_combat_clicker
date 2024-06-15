@@ -132,8 +132,8 @@ class HamsterClient(Session):
         try:
             response = self.post(url=URL_SYNC)
             self.state = response.json()["clickerUser"]
-        except Exception:
-            pass
+        except Exception as err:
+            logging.info(f'Ошибка: {err}')
 
     def check_task(self):
         """ Получение ежедневной награды """
