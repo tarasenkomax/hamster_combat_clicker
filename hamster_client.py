@@ -9,12 +9,9 @@ from requests import Response, Session
 
 from config import HEADERS, MORSE_CODE_DICT
 from enums import MessageEnum, UrlsEnum
+from mixins import TimestampMixin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
-
-
-def timestamp() -> int:
-    return int(time())
 
 
 def sorted_by_profit(prepared: List) -> List:
@@ -36,15 +33,13 @@ def sorted_by_payback(prepared: List) -> List:
 def retry(func):
     def wrapper(*args, **kwargs):
         while True:
-            sleep_time = 10
             try:
                 result = func(*args, **kwargs)
                 if result.status_code in (HTTPStatus.OK, HTTPStatus.CREATED, HTTPStatus.ACCEPTED):
                     return result
                 else:
                     logging.info(MessageEnum.MSG_BAD_RESPONSE.format(status=result.status_code, text=result.text))
-                    sleep(sleep_time)
-                    sleep_time += 1
+                    sleep(10)
             except Exception as error:
                 logging.error(MessageEnum.MSG_SESSION_ERROR.format(error=error))
                 sleep(1)
@@ -52,7 +47,7 @@ def retry(func):
     return wrapper
 
 
-class HamsterClient(Session):
+class HamsterClient(Session, TimestampMixin):
     state: Dict = None
     boosts: Dict = None
     upgrades: Dict = None
@@ -106,6 +101,7 @@ class HamsterClient(Session):
 
     @property
     def stats(self) -> Dict:
+        """ Статистика """
         return {
             "уровень": self.level,
             "энергия": self.available_taps,
@@ -115,6 +111,7 @@ class HamsterClient(Session):
 
     @property
     def log_prefix(self) -> str:
+        """ Префикс с именем пользователя для логирования """
         return f"[{self.name}]\t "
 
     def get_cipher_data(self) -> Dict:
@@ -172,7 +169,7 @@ class HamsterClient(Session):
         data = {
             "count": taps_count,
             "availableTaps": self.available_taps - taps_count,
-            "timestamp": timestamp()
+            "timestamp": self.timestamp()
         }
         self.post(url=UrlsEnum.TAP, json=data).json()
         logging.info(self.log_prefix + MessageEnum.MSG_TAP.format(taps_count=taps_count))
@@ -184,7 +181,7 @@ class HamsterClient(Session):
         """
         data = {
             "boostId": boost_name,
-            "timestamp": timestamp()
+            "timestamp": self.timestamp()
         }
         self.post(url=UrlsEnum.BUY_BOOST, json=data)
 
@@ -195,17 +192,18 @@ class HamsterClient(Session):
         """
         data = {
             "upgradeId": upgrade_name,
-            "timestamp": timestamp()
+            "timestamp": self.timestamp()
         }
-        res = self.post(url=UrlsEnum.BUY_UPGRADE, json=data)
-        return res
+        response = self.post(url=UrlsEnum.BUY_UPGRADE, json=data)
+        return response
 
     def upgrades_list(self) -> None:
-        """  Обновить список карточек """
+        """ Обновить список карточек """
         self.upgrades = self.post(url=UrlsEnum.UPGRADES_FOR_BUY).json()
 
     def update_boosts_list(self) -> None:
-        """ Обновить список усилиений
+        """
+        Обновить список усилиений
          - BoostEarnPerTap
          - BoostMaxTaps
          - BoostFullAvailableTaps
