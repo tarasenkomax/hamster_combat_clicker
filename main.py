@@ -18,8 +18,9 @@ def main():
             if client.is_taps_boost_available:
                 client.apply_boost()
             logging.info(client.log_prefix + " ".join(f"{k}: {v} |" for k, v in client.stats.items()))
-            sleep(choice(range(1, 10)))
-            print(" " * 150)
+            sleep(1)
+            print(' ')
+        print('-' * 120)
         sleep(60)
 
 
