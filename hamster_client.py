@@ -3,31 +3,15 @@ import re
 from base64 import b64decode
 from http import HTTPStatus
 from time import sleep, time
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 from requests import Response, Session
 
 from config import HEADERS, MORSE_CODE_DICT
 from enums import MessageEnum, UrlsEnum
-from mixins import TimestampMixin
+from mixins import TimestampMixin, CardSorterMixin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
-
-
-def sorted_by_profit(prepared: List) -> List:
-    return sorted(prepared, key=lambda x: x["profitPerHourDelta"], reverse=True)
-
-
-def sorted_by_profitness(prepared: List) -> List:
-    return sorted(prepared, key=lambda x: x['profitPerHourDelta'] / x['price'], reverse=True)
-
-
-def sorted_by_price(prepared: List) -> List:
-    return sorted(prepared, key=lambda x: x["price"], reverse=False)
-
-
-def sorted_by_payback(prepared: List) -> List:
-    return sorted(prepared, key=lambda x: x['price'] / x['profitPerHourDelta'], reverse=False)
 
 
 def retry(func):
@@ -47,7 +31,7 @@ def retry(func):
     return wrapper
 
 
-class HamsterClient(Session, TimestampMixin):
+class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     state: Dict = None
     boosts: Dict = None
     upgrades: Dict = None
@@ -219,10 +203,12 @@ class HamsterClient(Session, TimestampMixin):
                 - без ожидания перезарядки
             2. Сортируем по профитности на каждую потраченную монету
         """
-        methods = dict(payback=sorted_by_payback,
-                       price=sorted_by_price,
-                       profit=sorted_by_profit,
-                       profitness=sorted_by_profitness)
+        methods = dict(
+            payback=self.sorted_by_payback,
+            price=self.sorted_by_price,
+            profit=self.sorted_by_profit,
+            profitness=self.sorted_by_profitness
+        )
         prepared = []
         for upgrade in self.upgrades.get("upgradesForBuy"):
             if (
