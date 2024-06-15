@@ -2,12 +2,12 @@ import logging
 import re
 from base64 import b64decode
 from time import sleep, time
+from typing import List, Dict, Union
 
-from requests import Session
+from requests import Session, Response
 from requests import get as requests_get
 
 from strings import (
-    BOOST_ENERGY,
     HEADERS,
     MORSE_CODE_DICT,
     MSG_BAD_RESPONSE,
@@ -38,23 +38,23 @@ from strings import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
 
 
-def timestamp():
+def timestamp() -> int:
     return int(time())
 
 
-def sorted_by_profit(prepared):
+def sorted_by_profit(prepared: List) -> List:
     return sorted(prepared, key=lambda x: x["profitPerHourDelta"], reverse=True)
 
 
-def sorted_by_profitness(prepared):
+def sorted_by_profitness(prepared: List) -> List:
     return sorted(prepared, key=lambda x: x['profitPerHourDelta'] / x['price'], reverse=True)
 
 
-def sorted_by_price(prepared):
+def sorted_by_price(prepared: List) -> List:
     return sorted(prepared, key=lambda x: x["price"], reverse=False)
 
 
-def sorted_by_payback(prepared):
+def sorted_by_payback(prepared: List) -> List:
     return sorted(prepared, key=lambda x: x['price'] / x['profitPerHourDelta'], reverse=False)
 
 
@@ -90,29 +90,38 @@ def check_proxy(proxies):
 
 
 class HamsterClient(Session):
-    state = None
-    boosts = None
-    upgrades = None
-    task_checked_at = None
+    state: Dict = None
+    boosts: Dict = None
+    upgrades: Dict = None
+    task_checked_at: float = None
 
     def __init__(self, token, name="NoName", proxies=None, **kwargs) -> None:
         super().__init__()
         self.features = kwargs
-        self.headers = HEADERS.copy()
-        self.headers["Authorization"] = f"Bearer {token}"
+        self.headers: Dict = HEADERS.copy()
+        self.headers["Authorization"]: str = f"Bearer {token}"
         self.request = retry(super().request)
-        self.name = name
+        self.name: str = name
         if proxies and check_proxy(proxies):
             self.proxies = proxies
 
-    def get_cipher_data(self):
+    def get_cipher_data(self) -> Dict:
+        """
+        Получить информацио о морзянке
+
+        Example:
+            {
+                'cipher': 'REV4GSQ==',
+                'bonusCoins': 1000000,
+                'isClaimed': True,
+                'remainSeconds': 27144
+            }
+        """
         result = self.post(URL_CONFIG).json()
         return result['dailyCipher']
 
-    def claim_daily_cipher(self):
-        """
-        Разгадываем морзянку
-        """
+    def claim_daily_cipher(self) -> None:
+        """ Разгадываем морзянку """
         cipher_data = self.get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
@@ -127,22 +136,26 @@ class HamsterClient(Session):
                 logging.info(MSG_CIPHER.format(cipher=cipher + " | " + morse_cipher))
                 self.post(URL_CLAIM_DAILY_CIPHER, json={"cipher": cipher})
 
-    def sync(self):
+    def sync(self) -> None:
+        """ Обновить данные о пользователе """
         logging.info(self.log_prefix + MSG_SYNC)
         try:
             response = self.post(url=URL_SYNC)
             self.state = response.json()["clickerUser"]
         except Exception as err:
-            logging.info(f'Ошибка: {err}')
+            logging.info(f'Ошибка при обновлении данных пользователя: {err}')
 
-    def check_task(self):
+    def check_task(self) -> None:
         """ Получение ежедневной награды """
-        data = {"taskId": "streak_days"}
+        data = {
+            "taskId": "streak_days"
+        }
         if not self.task_checked_at or time() - self.task_checked_at >= 60 * 60:
             self.post(URL_CHECK_TASK, json=data)
             self.task_checked_at = time()
 
     def tap(self):
+        """ Тапаем на монетки """
         taps_count = self.available_taps or self.recover_per_sec
         data = {
             "count": taps_count,
@@ -152,51 +165,72 @@ class HamsterClient(Session):
         self.post(URL_TAP, json=data).json()
         logging.info(self.log_prefix + MSG_TAP.format(taps_count=taps_count))
 
-    def boost(self, boost_name=BOOST_ENERGY):
-        data = {"boostId": boost_name, "timestamp": timestamp()}
+    def boost(self, boost_name='BoostFullAvailableTaps') -> None:
+        """
+        Купить усиление
+        :param boost_name: название усиления
+        """
+        data = {
+            "boostId": boost_name,
+            "timestamp": timestamp()
+        }
         self.post(URL_BUY_BOOST, json=data)
 
-    def upgrade(self, upgrade_name):
+    def upgrade(self, upgrade_name) -> Response:
+        """
+        Купить карточку
+        :param upgrade_name: название карточки
+        """
         data = {
             "upgradeId": upgrade_name,
             "timestamp": timestamp()
         }
-        return self.post(URL_BUY_UPGRADE, json=data)
+        res = self.post(URL_BUY_UPGRADE, json=data)
+        return res
 
-    def upgrades_list(self):
+    def upgrades_list(self) -> None:
+        """  Обновить список карточек """
         self.upgrades = self.post(URL_UPGRADES_FOR_BUY).json()
 
-    def boosts_list(self):
+    def boosts_list(self) -> None:
+        """ Обновить список усилиений
+         - BoostEarnPerTap
+         - BoostMaxTaps
+         - BoostFullAvailableTaps
+         """
         self.boosts = self.post(URL_BOOSTS_FOR_BUY).json()
 
     @property
-    def balance(self):
+    def balance(self) -> Union[float, None]:
+        """ Количество заработанных монеток """
         if self.state:
             return self.state["balanceCoins"]
 
     @property
-    def level(self):
+    def level(self) -> Union[int, None]:
+        """ Текущий уровень """
         if self.state:
             return self.state["level"]
 
     @property
-    def available_taps(self):
+    def available_taps(self) -> Union[int, None]:
+        """ Энергия """
         if self.state:
             return self.state["availableTaps"]
 
     @property
-    def recover_per_sec(self):
+    def recover_per_sec(self) -> Union[int, None]:
         if self.state:
             return self.state["tapsRecoverPerSec"]
 
     @property
-    def is_taps_boost_available(self):
+    def is_taps_boost_available(self) -> Union[bool, None]:
         self.boosts_list()
         if not self.boosts:
             return
         for boost in self.boosts["boostsForBuy"]:
             if (
-                boost["id"] == BOOST_ENERGY
+                boost["id"] == 'BoostFullAvailableTaps'
                 and boost["cooldownSeconds"] == 0
                 and boost["level"] <= boost["maxLevel"]
             ):
@@ -266,7 +300,7 @@ class HamsterClient(Session):
                     logging.info(self.log_prefix + MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
 
     @property
-    def stats(self):
+    def stats(self) -> Dict:
         return {
             "уровень": self.level,
             "энергия": self.available_taps,

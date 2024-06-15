@@ -25,8 +25,6 @@ MSG_PROXY_IP = "Прокси работает. Ваш IP через прокси
 MSG_PROXY_CHECK_ERROR = "Ошибка при проверке прокси. Код ответа: {status_code}"
 MSG_PROXY_CONNECTION_ERROR = "Не удалось подключиться через прокси: {error}"
 
-BOOST_ENERGY = "BoostFullAvailableTaps"
-DELIMITER = "-" * 150
 
 HEADERS = {
     "Connection": "keep-alive",

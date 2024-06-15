@@ -1,8 +1,7 @@
 from random import choice
 
 from config import ACCOUNTS
-from hamster_client import BOOST_ENERGY, HamsterClient, logging, sleep
-from strings import DELIMITER
+from hamster_client import HamsterClient, logging, sleep
 
 clients = [HamsterClient(**options) for options in ACCOUNTS]
 
@@ -10,7 +9,7 @@ clients = [HamsterClient(**options) for options in ACCOUNTS]
 def main():
     while True:
         for client in clients:
-            print(DELIMITER)
+            print("-" * 150)
             client.sync()
             client.claim_daily_cipher()
             client.tap()
@@ -18,9 +17,9 @@ def main():
             client.check_task()
             client.claim_combo_reward()
             if client.is_taps_boost_available:
-                client.boost(BOOST_ENERGY)
+                client.boost()
             logging.info(client.log_prefix + " ".join(f"{k}: {v} |" for k, v in client.stats.items()))
-            print(DELIMITER)
+            print("-" * 150)
             sleep(choice(range(1, 10)))
         sleep(60)
 
