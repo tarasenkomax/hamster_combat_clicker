@@ -1,6 +1,4 @@
 import asyncio
-from random import choice
-from typing import List
 
 from accounts import ACCOUNTS
 from client import HamsterClient, logging, sleep
