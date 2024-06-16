@@ -238,7 +238,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                         if result.status_code == HTTPStatus.OK:
                             self.state = result.json()["clickerUser"]
                         logging.info(self.log_prefix + MessageEnum.MSG_BUY_UPGRADE.format(**upgrade))
-                        sleep(1)
+                        sleep(0.5)
                     else:
                         break
                 else:
