@@ -100,7 +100,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def get_cipher_data(self) -> Dict:
         """
-        Получить информацио о морзянке
+        Получить информацио о шифре
 
         Example:
             {
@@ -114,7 +114,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         return result['dailyCipher']
 
     def claim_daily_cipher(self) -> None:
-        """ Разгадываем морзянку """
+        """ Разгадываем шифр """
         cipher_data = self.get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
