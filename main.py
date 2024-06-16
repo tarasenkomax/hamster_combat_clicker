@@ -20,7 +20,7 @@ async def main():
             sleep(0.5)
             print(' ')
         print('-'*120)
-        # sleep(60)
+        sleep(60)
 
 
 if __name__ == "__main__":
