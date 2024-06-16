@@ -267,5 +267,6 @@ class HamsterClient(TimestampMixin, CardSorterMixin):
                 async with self._session.request(method="POST", url=UrlsEnum.CLAIM_DAILY_COMBO) as response:
                     response.raise_for_status()
                     if response.status == HTTPStatus.OK:
-                        self.state = await response.json()["clickerUser"]
+                        response_state = await response.json()
+                        self.state = response_state["clickerUser"]
                         logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
