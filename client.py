@@ -247,7 +247,7 @@ class HamsterClient(TimestampMixin, CardSorterMixin):
                             result_data = result['data']
                             self.state = result_data["clickerUser"]
                         logging.info(self.log_prefix + MessageEnum.MSG_BUY_UPGRADE.format(**upgrade))
-                        sleep(1)
+                        sleep(0.5)
                     else:
                         break
                 else:
