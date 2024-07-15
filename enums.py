@@ -2,7 +2,7 @@ from enum import StrEnum
 
 
 class UrlsEnum(StrEnum):
-    BASE_URL = "https://api.hamsterkombat.io/clicker"
+    BASE_URL = "https://api.hamsterkombatgame.io/clicker"
     CHECK_IP = 'https://httpbin.org/ip'
 
     CLAIM_DAILY_CIPHER = BASE_URL + '/claim-daily-cipher',
