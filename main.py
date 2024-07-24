@@ -1,5 +1,3 @@
-from random import choice
-
 from accounts import ACCOUNTS
 from hamster_client import HamsterClient, logging, sleep
 
