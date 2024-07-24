@@ -237,7 +237,19 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                         result = self.upgrade_card(upgrade['id'])
                         if result.status_code == HTTPStatus.OK:
                             self.state = result.json()["clickerUser"]
-                        logging.info(self.log_prefix + MessageEnum.MSG_BUY_UPGRADE.format(**upgrade))
+
+                        log_info = {
+                            'name': upgrade['name'],
+                            'price': re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(upgrade['price'])),
+                            'level': upgrade['level'],
+                            'profitPerHourDelta': re.sub(
+                                r'(?<!^)(?=(\d{3})+$)',
+                                ' ',
+                                str(upgrade['profitPerHourDelta'])
+                            ),
+                        }
+
+                        logging.info(self.log_prefix + MessageEnum.MSG_BUY_UPGRADE.format(**log_info))
                         sleep(0.5)
                     else:
                         break
