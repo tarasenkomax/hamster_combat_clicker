@@ -3,13 +3,13 @@ import re
 from base64 import b64decode
 from http import HTTPStatus
 from time import sleep, time
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from requests import Response, Session
 
 from config import HEADERS, MORSE_CODE_DICT
 from enums import MessageEnum, UrlsEnum
-from mixins import TimestampMixin, CardSorterMixin
+from mixins import CardSorterMixin, TimestampMixin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
 
@@ -35,6 +35,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     state: Dict = None
     boosts: Dict = None
     upgrades: Dict = None
+    tasks: List = None
     task_checked_at: float = None
 
     def __init__(self, token, name="NoName", **kwargs) -> None:
@@ -168,6 +169,36 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             "timestamp": self.timestamp()
         }
         self.post(url=UrlsEnum.BUY_BOOST, json=data)
+
+    def update_tasks(self):
+        """ Обновить список заданий """
+        response = self.post(UrlsEnum.LIST_TASKS)
+        if response.status_code == 200:
+            result = response.json()
+            self.tasks = list(filter(lambda d: d['isCompleted'] != True, result["tasks"]))
+
+    def execute_youtube_tasks(self):
+        """ Выполнить задания по просмотру youtube видео """
+        self.update_tasks()
+        for task in self.tasks:
+            task_id = task['id']
+            reward = task['rewardCoins']
+
+            if not task_id.startswith('hamster_youtube'):
+                continue
+
+            if reward > 0:
+                sleep(1)
+                data = {'taskId': task_id}
+                response = self.post(UrlsEnum.CHECK_TASK, json=data)
+                if response.status_code == 200:
+                    result = response.json()
+                    result = result["task"]
+                    is_completed = result.get('isCompleted')
+                    if is_completed:
+                        logging.info(self.log_prefix + MessageEnum.MSG_TASK_COMPLETED.format(reward=reward))
+                    else:
+                        logging.info(self.log_prefix + MessageEnum.MSG_TASK_NOT_COMPLETED)
 
     def upgrade_card(self, upgrade_name) -> Response:
         """

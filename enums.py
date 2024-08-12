@@ -29,3 +29,5 @@ class MessageEnum(StrEnum):
     MSG_CIPHER = "Новый шифр: {cipher}"
     MSG_SYNC = "Данные обновлены"
     MSG_SYNC_ERROR = "Ошибка при обновлении данных пользователя: {error}"
+    MSG_TASK_COMPLETED = "Задание выполнено. Награда: {reward}"
+    MSG_TASK_NOT_COMPLETED = "Задание не выполнено"

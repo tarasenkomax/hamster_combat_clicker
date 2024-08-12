@@ -11,8 +11,8 @@ def main():
             client.claim_daily_cipher()
             client.tap()
             client.buy_upgrades()
-            # client.upgrade_card('')
             client.check_task()
+            client.execute_youtube_tasks()
             client.claim_combo_reward()
             if client.is_taps_boost_available:
                 client.apply_boost()
