@@ -45,7 +45,6 @@ class CodeGenerator(Session):
     def get_client_token(self, client_id: str) -> str:
         """ Получить client_token """
         url = UrlsEnum.LOGIN_CLIENT
-        print(url)
         payload = {
             "appToken": self.game["appToken"],
             "clientId": client_id,
