@@ -17,6 +17,11 @@ class UrlsEnum(StrEnum):
     SYNC = BASE_URL + '/sync',
     TAP = BASE_URL + '/tap',
 
+    GAME_PROMO_BASE_URL = 'https://api.gamepromo.io/promo'
+    LOGIN_CLIENT = GAME_PROMO_BASE_URL + '/login-client'
+    REGISTER_EVENT = GAME_PROMO_BASE_URL + '/register-event'
+    CREATE_CODE = GAME_PROMO_BASE_URL + '/create-code'
+
 
 class MessageEnum(StrEnum):
     MSG_BUY_UPGRADE = "Прокачал: {name} : ур.{level} за {price} даст +{profitPerHourDelta}/час"
@@ -24,15 +29,21 @@ class MessageEnum(StrEnum):
     MSG_COMBO_EARNED = "Получено вознаграждение за комбо: {coins}"
     MSG_BAD_RESPONSE = "Плохой ответ от сервера: {status} {text}"
     MSG_CLAIMED_COMBO_CARDS = "Полученные комбо карты: {cards}"
-    MSG_CRYPTED_CIPHER = "Шифрованный шифр: {cipher}"
     MSG_TAP = "Тапнул на {taps_count} монет"
-    MSG_CIPHER = "Новый шифр: {cipher}"
     MSG_SYNC = "Данные обновлены"
-    MSG_MINIGAME_LIST_ERROR = "Список мини игр приходящий с сервера не совпадает со списком из конфига"
-    MSG_SUCCESSFUL_PROMO_APPLY = "Код {code} успешно применён"
-    MSG_GENERATE_KEYS_START = "Генерация ключей началась"
-    MSG_GENERATE_KEYS_END = "Генерация ключей завершена"
-    MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения кода {code}"
     MSG_SYNC_ERROR = "Ошибка при обновлении данных пользователя: {error}"
+
+    MSG_CIPHER = "Новый шифр: {cipher}"
+    MSG_CRYPTED_CIPHER = "Шифрованный шифр: {cipher}"
+
     MSG_TASK_COMPLETED = "Задание выполнено. Награда: {reward}"
     MSG_TASK_NOT_COMPLETED = "Задание не выполнено"
+
+    MSG_SUCCESSFUL_PROMO_APPLY = "Ключ {code} успешно применён"
+    MSG_GENERATE_KEYS_START = "Генерация ключей началась"
+    MSG_GENERATE_KEYS_GAME = "Генерация ключей для {game}..."
+    MSG_GENERATE_KEYS_COUNT = "Сгенерированно {count} ключей для {game}"
+    MSG_GENERATE_KEYS_END = "Генерация ключей завершена"
+    MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения ключа {code}"
+    MSG_UNSUCCESSFUL_GETTING_CLIENT_TOKEN = "Неуспешное получение клиентского токена: {err}"
+    MSG_UNSUCCESSFUL_GENERATE_KEY = "Ошибка генерации ключа: {err}"
