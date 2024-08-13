@@ -7,8 +7,8 @@ clients = [HamsterClient(**options) for options in ACCOUNTS]
 def main():
     while True:
         for client in clients:
-            client.sync()
             client.apply_all_codes()
+            client.sync()
             client.claim_daily_cipher()
             client.tap()
             client.buy_upgrades()

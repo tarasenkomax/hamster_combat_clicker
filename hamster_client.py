@@ -1,5 +1,4 @@
 import logging
-import random
 import re
 from base64 import b64decode
 from http import HTTPStatus
@@ -8,7 +7,7 @@ from typing import Dict, List, Union
 
 from requests import Response, Session
 
-from config import HEADERS, MORSE_CODE_DICT, MINI_GAMES
+from config import HEADERS, MORSE_CODE_DICT
 from enums import MessageEnum, UrlsEnum
 from mixins import CardSorterMixin, TimestampMixin
 
@@ -156,18 +155,6 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
 
-    def _compare_promo(self) -> bool:
-        """
-        Сравнить списки мини игр приходящие с сервера и те, что записаны в конфиге
-        # todo С сервера приходит список мини игр в которых есть хотя бы один ключ. первый нужно вводить руками в приложении
-        """
-        server_promios = {(frozenset(item)) for item in [promo['promoId'] for promo in self.state['promos']]}
-        my_promos = {(frozenset(item)) for item in MINI_GAMES.values()}
-        minigames_equality = server_promios == my_promos
-        if not minigames_equality:
-            logging.error(self.log_prefix + MessageEnum.MSG_MINIGAME_LIST_ERROR)
-        return minigames_equality
-
     def _apply_minigame_code(self, code: str) -> None:
         """
         Ввести код из мини игры для получения ключей
@@ -188,7 +175,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     def _generate_minigame_codes(self) -> List[str]:
         """ Сгенерировать коды из мини игр """
         logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_START)
-        #todo
+        # todo тут использровать класс
         logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_END)
         return []
 
@@ -197,10 +184,9 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         Ввести все коды
         """
         self.request = super().request
-        if self._compare_promo():
-            code_list = self._generate_minigame_codes()
-            for code in code_list:
-                self._apply_minigame_code(code)
+        code_list = self._generate_minigame_codes()
+        for code in code_list:
+            self._apply_minigame_code(code)
         self.request = retry(super().request)
 
     def check_task(self) -> None:
