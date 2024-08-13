@@ -73,7 +73,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     @property
     def is_taps_boost_available(self) -> Union[bool, None]:
         """ Проверка, доступны ли усиления """
-        self.update_boosts_list()
+        self._update_boosts_list()
         if not self.boosts:
             return
         for boost in self.boosts["boostsForBuy"]:
@@ -139,8 +139,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
 
-    def apply_promo(self, code: str) -> None:
-        """ Ввести ключ """
+    def _apply_minigame_code(self, code: str) -> None:
+        """
+        Ввести код из мини игры для получения ключей
+        :param code: код для ввода
+        """
         self.request = super().request
         data = {"promoCode": code}
         response = self.post(url=UrlsEnum.APPLY_PROMO, json=data)
@@ -149,6 +152,24 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         else:
             logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
         self.request = retry(super().request)
+
+    def check_no_entered_codes(self):
+        """ Проверить не введенные коды из мини игр"""
+        # todo
+        pass
+
+    def generate_minigame_codes(self):
+        """ Сгенерировать коды из мини игр """
+        # todo
+        pass
+
+    def apply_all_codes(self, code_list: List[str]):
+        """
+        Ввести все коды
+        :param code_list: список кодов из мини игр
+        """
+        for code in code_list:
+            self._apply_minigame_code(code)
 
     def check_task(self) -> None:
         """ Получение ежедневной награды """
@@ -181,7 +202,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         }
         self.post(url=UrlsEnum.BUY_BOOST, json=data)
 
-    def update_tasks(self):
+    def _update_tasks(self):
         """ Обновить список заданий """
         response = self.post(UrlsEnum.LIST_TASKS)
         if response.status_code == HTTPStatus.OK:
@@ -190,7 +211,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def execute_youtube_tasks(self):
         """ Выполнить задания по просмотру youtube видео """
-        self.update_tasks()
+        self._update_tasks()
         for task in self.tasks:
             task_id = task['id']
             reward = task['rewardCoins']
@@ -210,7 +231,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                     else:
                         logging.info(self.log_prefix + MessageEnum.MSG_TASK_NOT_COMPLETED)
 
-    def upgrade_card(self, upgrade_name) -> Response:
+    def _upgrade_card(self, upgrade_name) -> Response:
         """
         Купить карточку
         :param upgrade_name: название карточки
@@ -222,11 +243,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         response = self.post(url=UrlsEnum.BUY_UPGRADE, json=data)
         return response
 
-    def upgrades_list(self) -> None:
+    def _upgrades_list(self) -> None:
         """ Обновить список карточек """
         self.upgrades = self.post(url=UrlsEnum.UPGRADES_FOR_BUY).json()
 
-    def update_boosts_list(self) -> None:
+    def _update_boosts_list(self) -> None:
         """
         Обновить список усилиений
          - BoostEarnPerTap
@@ -235,7 +256,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
          """
         self.boosts = self.post(url=UrlsEnum.BOOSTS_FOR_BUY).json()
 
-    def get_sorted_upgrades(self, method):
+    def _get_sorted_upgrades(self, method):
         """
             1. Фильтруем карточки
                 - доступные для покупки
@@ -271,11 +292,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         """ Покупаем лучшие апгрейды на все монеты """
         if self.features['buy_upgrades']:
             while True:
-                self.upgrades_list()
-                if sorted_upgrades := self.get_sorted_upgrades(self.features['buy_decision_method']):
+                self._upgrades_list()
+                if sorted_upgrades := self._get_sorted_upgrades(self.features['buy_decision_method']):
                     upgrade = sorted_upgrades[0]
                     if upgrade['price'] <= self.balance:
-                        result = self.upgrade_card(upgrade['id'])
+                        result = self._upgrade_card(upgrade['id'])
                         if result.status_code == HTTPStatus.OK:
                             self.state = result.json()["clickerUser"]
 
@@ -297,7 +318,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 else:
                     break
         else:
-            self.upgrades_list()
+            self._upgrades_list()
 
     def claim_combo_reward(self) -> None:
         """ Получаем награду, если собрано комбо """
