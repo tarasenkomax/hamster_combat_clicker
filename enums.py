@@ -3,13 +3,13 @@ from enum import StrEnum
 
 class UrlsEnum(StrEnum):
     BASE_URL = "https://api.hamsterkombatgame.io/clicker"
-    CHECK_IP = 'https://httpbin.org/ip'
 
     CLAIM_DAILY_CIPHER = BASE_URL + '/claim-daily-cipher',
     CLAIM_DAILY_COMBO = BASE_URL + '/claim-daily-combo',
     UPGRADES_FOR_BUY = BASE_URL + '/upgrades-for-buy',
     BOOSTS_FOR_BUY = BASE_URL + '/boosts-for-buy',
     BUY_UPGRADE = BASE_URL + '/buy-upgrade',
+    APPLY_PROMO = BASE_URL + '/apply-promo',
     LIST_TASKS = BASE_URL + '/list-tasks',
     CHECK_TASK = BASE_URL + '/check-task',
     BUY_BOOST = BASE_URL + '/buy-boost',
@@ -28,6 +28,8 @@ class MessageEnum(StrEnum):
     MSG_TAP = "Тапнул на {taps_count} монет"
     MSG_CIPHER = "Новый шифр: {cipher}"
     MSG_SYNC = "Данные обновлены"
+    MSG_SUCCESSFUL_PROMO_APPLY = "Код {code} успешно применён"
+    MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения кода {code}"
     MSG_SYNC_ERROR = "Ошибка при обновлении данных пользователя: {error}"
     MSG_TASK_COMPLETED = "Задание выполнено. Награда: {reward}"
     MSG_TASK_NOT_COMPLETED = "Задание не выполнено"

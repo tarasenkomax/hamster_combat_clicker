@@ -139,6 +139,17 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
 
+    def apply_promo(self, code: str) -> None:
+        """ Ввести ключ """
+        self.request = super().request
+        data = {"promoCode": code}
+        response = self.post(url=UrlsEnum.APPLY_PROMO, json=data)
+        if response.status_code == HTTPStatus.OK:
+            logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
+        else:
+            logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
+        self.request = retry(super().request)
+
     def check_task(self) -> None:
         """ Получение ежедневной награды """
         data = {
@@ -173,7 +184,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     def update_tasks(self):
         """ Обновить список заданий """
         response = self.post(UrlsEnum.LIST_TASKS)
-        if response.status_code == 200:
+        if response.status_code == HTTPStatus.OK:
             result = response.json()
             self.tasks = list(filter(lambda d: d['isCompleted'] != True, result["tasks"]))
 
@@ -190,7 +201,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             if reward > 0:
                 data = {'taskId': task_id}
                 response = self.post(UrlsEnum.CHECK_TASK, json=data)
-                if response.status_code == 200:
+                if response.status_code == HTTPStatus.OK:
                     result = response.json()
                     result = result["task"]
                     is_completed = result.get('isCompleted')
