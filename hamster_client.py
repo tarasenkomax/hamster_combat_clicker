@@ -1,4 +1,5 @@
 import logging
+import random
 import re
 from base64 import b64decode
 from http import HTTPStatus
@@ -7,7 +8,7 @@ from typing import Dict, List, Union
 
 from requests import Response, Session
 
-from config import HEADERS, MORSE_CODE_DICT
+from config import HEADERS, MORSE_CODE_DICT, MINI_GAMES
 from enums import MessageEnum, UrlsEnum
 from mixins import CardSorterMixin, TimestampMixin
 
@@ -33,6 +34,7 @@ def retry(func):
 
 class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     state: Dict = None
+    promos: List[str] = None
     boosts: Dict = None
     upgrades: Dict = None
     tasks: List = None
@@ -80,7 +82,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             return self.state["tapsRecoverPerSec"]
 
     @property
-    def is_taps_boost_available(self) -> Union[bool, None]:
+    def _is_taps_boost_available(self) -> Union[bool, None]:
         """ Проверка, доступны ли усиления """
         self._update_boosts_list()
         if not self.boosts:
@@ -124,6 +126,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         result = self.post(url=UrlsEnum.CONFIG).json()
         return result['dailyCipher']
 
+    def log_stats(self):
+        """ Логирование статистики"""
+        logging.info(self.log_prefix + " ".join(f"{k}: {v} |" for k, v in self.stats.items()))
+
     def claim_daily_cipher(self) -> None:
         """ Разгадываем шифр """
         cipher_data = self.get_cipher_data()
@@ -146,40 +152,56 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             response = self.post(url=UrlsEnum.SYNC)
             self.state = response.json()["clickerUser"]
             logging.info(self.log_prefix + MessageEnum.MSG_SYNC)
+            # print(self.state)
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
+
+    def _compare_promo(self) -> bool:
+        """
+        Сравнить списки мини игр приходящие с сервера и те, что записаны в конфиге
+        # todo С сервера приходит список мини игр в которых есть хотя бы один ключ. первый нужно вводить руками в приложении
+        """
+        server_promios = {(frozenset(item)) for item in [promo['promoId'] for promo in self.state['promos']]}
+        my_promos = {(frozenset(item)) for item in MINI_GAMES.values()}
+        minigames_equality = server_promios == my_promos
+        if not minigames_equality:
+            logging.error(self.log_prefix + MessageEnum.MSG_MINIGAME_LIST_ERROR)
+        return minigames_equality
 
     def _apply_minigame_code(self, code: str) -> None:
         """
         Ввести код из мини игры для получения ключей
         :param code: код для ввода
         """
-        self.request = super().request
         data = {"promoCode": code}
         response = self.post(url=UrlsEnum.APPLY_PROMO, json=data)
         if response.status_code == HTTPStatus.OK:
             logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
         else:
             logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
-        self.request = retry(super().request)
 
     def check_no_entered_codes(self):
         """ Проверить не введенные коды из мини игр"""
-        # todo
+        # todo пока не решил, нужна ли эта функция
         pass
 
     def _generate_minigame_codes(self) -> List[str]:
         """ Сгенерировать коды из мини игр """
-        # todo
+        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_START)
+        #todo
+        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_END)
         return []
 
     def apply_all_codes(self):
         """
         Ввести все коды
         """
-        code_list = self._generate_minigame_codes()
-        for code in code_list:
-            self._apply_minigame_code(code)
+        self.request = super().request
+        if self._compare_promo():
+            code_list = self._generate_minigame_codes()
+            for code in code_list:
+                self._apply_minigame_code(code)
+        self.request = retry(super().request)
 
     def check_task(self) -> None:
         """ Получение ежедневной награды """
@@ -206,11 +228,12 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         Взять усиление
         :param boost_name: название усиления
         """
-        data = {
-            "boostId": boost_name,
-            "timestamp": self.timestamp()
-        }
-        self.post(url=UrlsEnum.BUY_BOOST, json=data)
+        if self._is_taps_boost_available:
+            data = {
+                "boostId": boost_name,
+                "timestamp": self.timestamp()
+            }
+            self.post(url=UrlsEnum.BUY_BOOST, json=data)
 
     def _update_tasks(self):
         """ Обновить список заданий """

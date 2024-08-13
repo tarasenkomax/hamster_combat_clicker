@@ -1,5 +1,5 @@
 from accounts import ACCOUNTS
-from hamster_client import HamsterClient, logging, sleep
+from hamster_client import HamsterClient, sleep
 
 clients = [HamsterClient(**options) for options in ACCOUNTS]
 
@@ -15,9 +15,8 @@ def main():
             client.check_task()
             client.execute_youtube_tasks()
             client.claim_combo_reward()
-            if client.is_taps_boost_available:
-                client.apply_boost()
-            logging.info(client.log_prefix + " ".join(f"{k}: {v} |" for k, v in client.stats.items()))
+            client.apply_boost()
+            client.log_stats()
             sleep(0.5)
             print(' ')
         print('-' * 120)
