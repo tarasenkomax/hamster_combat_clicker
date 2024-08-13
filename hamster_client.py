@@ -59,6 +59,15 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             return self.state["level"]
 
     @property
+    def keys(self) -> Union[int, None]:
+        """
+        Количество ключей
+        параметр totalKeys имеет такое же значение как и balanceKeys. Возможно изменится после траты ключей.
+        """
+        if self.state:
+            return self.state["balanceKeys"]
+
+    @property
     def available_taps(self) -> Union[int, None]:
         """ Энергия """
         if self.state:
@@ -91,6 +100,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             "уровень": self.level,
             "энергия": self.available_taps,
             'баланс': re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.balance)),
+            'ключи': re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.keys)),
             "доход в час": re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.state['earnPassivePerHour']))
         }
 
@@ -158,16 +168,16 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         # todo
         pass
 
-    def generate_minigame_codes(self):
+    def _generate_minigame_codes(self) -> List[str]:
         """ Сгенерировать коды из мини игр """
         # todo
-        pass
+        return []
 
-    def apply_all_codes(self, code_list: List[str]):
+    def apply_all_codes(self):
         """
         Ввести все коды
-        :param code_list: список кодов из мини игр
         """
+        code_list = self._generate_minigame_codes()
         for code in code_list:
             self._apply_minigame_code(code)
 

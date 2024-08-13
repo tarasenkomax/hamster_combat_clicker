@@ -14,6 +14,12 @@ HEADERS = {
     "Accept-Encoding": "gzip, deflate, br",
 }
 
+MINI_GAMES = {
+    'Train Miner': 'c4480ac7-e178-4973-8061-9ed5b2e17954',
+    'Bike Ride 3D': '43e35910-c168-4634-ad4f-52fd764a843f',
+    'My Clone Army': 'fe693b26-b342-4159-8808-15e3ff7f8767',
+    'Chain Cube 2048': 'b4170868-cef0-424f-8eb9-be0622e8e8e3',
+}
 MORSE_CODE_DICT = {
     'A': '.-',
     'B': '-...',
