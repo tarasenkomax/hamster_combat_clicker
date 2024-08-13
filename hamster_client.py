@@ -188,7 +188,6 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 continue
 
             if reward > 0:
-                sleep(1)
                 data = {'taskId': task_id}
                 response = self.post(UrlsEnum.CHECK_TASK, json=data)
                 if response.status_code == 200:
