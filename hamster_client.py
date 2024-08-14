@@ -167,6 +167,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
         else:
             logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
+        self.codes.remove(code)
 
     def check_no_entered_codes(self):
         """ Проверить не введенные коды из мини игр"""
