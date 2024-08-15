@@ -352,3 +352,17 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 if result.status_code == HTTPStatus.OK:
                     self.state = result.json()["clickerUser"]
                     logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
+
+    def execute(self) -> None:
+        self.apply_all_codes()
+        self.sync()
+        self.claim_daily_cipher()
+        self.tap()
+        self.buy_upgrades()
+        self.check_task()
+        self.execute_youtube_tasks()
+        self.claim_combo_reward()
+        self.apply_boost()
+        self.log_stats()
+        sleep(0.5)
+        print(' ')
