@@ -31,6 +31,10 @@ MINI_GAMES = {
         "appToken": "d28721be-fd2d-4b45-869e-9f253b554e50",
         "promoId": "43e35910-c168-4634-ad4f-52fd764a843f"
     },
+    'MergeAway': {
+        'appToken': '8d1cc2ad-e097-4b86-90ef-7a27e19fb833',
+        'promoId': 'dc128d28-c45b-411c-98ff-ac7726fbaea4',
+    },
 }
 MORSE_CODE_DICT = {
     'A': '.-',
