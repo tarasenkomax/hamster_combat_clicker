@@ -365,4 +365,3 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         self.apply_boost()
         self.log_stats()
         sleep(0.5)
-        print(' ')
