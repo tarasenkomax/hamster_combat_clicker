@@ -184,11 +184,12 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def apply_all_codes(self):
         """ Ввести все коды """
-        self.request = super().request
-        self._generate_minigame_codes()
-        for code in self.codes:
-            self._apply_minigame_code(code)
-        self.request = retry(super().request)
+        if self.features['generate_codes']:
+            self.request = super().request
+            self._generate_minigame_codes()
+            for code in self.codes:
+                self._apply_minigame_code(code)
+            self.request = retry(super().request)
 
     def check_task(self) -> None:
         """ Получение ежедневной награды """
