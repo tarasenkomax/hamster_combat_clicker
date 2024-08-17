@@ -101,7 +101,7 @@ class CodeGenerator(Session):
             logging.error(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_GETTING_CLIENT_TOKEN.format(err=err))
             return None
 
-        for _ in range(7):
+        for _ in range(10):
             self.sleep_with_random_delay()
             has_code = self.emulate_progress(client_token)
             if has_code:
