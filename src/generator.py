@@ -10,8 +10,7 @@ from typing import Dict, List, Union
 
 from requests import Session
 
-from config import MINI_GAMES
-from enums import MessageEnum, UrlsEnum
+from config.morse import MINI_GAMES, MessageEnum, UrlsEnum
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
 

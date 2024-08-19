@@ -40,9 +40,7 @@ class MessageEnum(StrEnum):
     MSG_TASK_NOT_COMPLETED = "Задание не выполнено"
 
     MSG_SUCCESSFUL_PROMO_APPLY = "Ключ {code} успешно применён"
-    MSG_GENERATE_KEYS_START = "Генерация ключей началась"
     MSG_GENERATE_KEYS_GAME = "Генерация ключей для {game}..."
-    MSG_GENERATE_KEYS_END = "Генерация ключей завершена"
     MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения ключа {code}"
     MSG_UNSUCCESSFUL_GETTING_CLIENT_TOKEN = "Неуспешное получение клиентского токена: {err}"
     MSG_UNSUCCESSFUL_GENERATE_KEY = "Ошибка генерации ключа: {err}"

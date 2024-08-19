@@ -7,8 +7,10 @@ from typing import Dict, List, Union
 
 from requests import Response, Session
 
-from config import HEADERS, MINI_GAMES, MORSE_CODE_DICT
-from enums import MessageEnum, UrlsEnum
+from config.enums import MessageEnum, UrlsEnum
+from config.headers import HEADERS
+from config.mini_games import MINI_GAMES
+from config.morse import MORSE_CODE_DICT
 from generator import CodeGenerator
 from mixins import CardSorterMixin, TimestampMixin
 
@@ -176,11 +178,9 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def _generate_minigame_codes(self) -> None:
         """ Сгенерировать коды из мини игр """
-        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_START)
         for game in MINI_GAMES.keys():
             key_gen = CodeGenerator(key_count=4, name=self.name, game_name=game)
             self.codes += key_gen.execute()
-        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_END)
 
     def apply_all_codes(self):
         """ Ввести все коды """
