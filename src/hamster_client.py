@@ -171,15 +171,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
         self.codes.remove(code)
 
-    def check_no_entered_codes(self):
-        """ Проверить не введенные коды из мини игр"""
-        # todo
-        pass
-
     def _generate_minigame_codes(self) -> None:
         """ Сгенерировать коды из мини игр """
         for game in MINI_GAMES.keys():
-            key_gen = CodeGenerator(key_count=4, name=self.name, game_name=game)
+            key_gen = CodeGenerator(key_count=4, account_name=self.name, game_name=game)
             self.codes += key_gen.execute()
 
     def apply_all_codes(self):

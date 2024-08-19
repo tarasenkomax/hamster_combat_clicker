@@ -17,18 +17,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(me
 
 
 class CodeGenerator(Session):
-    def __init__(self, game_name: str, key_count: int, name: str) -> None:
+    def __init__(self, game_name: str, key_count: int, account_name: str) -> None:
         super().__init__()
         self.game_name = game_name
-        self.EVENTS_DELAY = 20
         self.key_count = key_count
-        self.name = name
+        self.account_name = account_name
         self.game: Dict = MINI_GAMES[self.game_name]
 
     @property
     def log_prefix(self) -> str:
         """ Префикс с именем пользователя для логирования """
-        return f"[{self.name}]\t "
+        return f"[{self.account_name}]\t "
 
     @staticmethod
     def generate_client_id() -> str:
