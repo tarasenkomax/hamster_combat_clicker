@@ -1,6 +1,6 @@
 import threading
 
-from config.morse import ACCOUNTS
+from config.accounts import ACCOUNTS
 from hamster_client import HamsterClient, sleep
 
 clients = [HamsterClient(**options) for options in ACCOUNTS]
