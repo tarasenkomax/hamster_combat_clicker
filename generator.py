@@ -39,14 +39,14 @@ class CodeGenerator(Session):
 
     def sleep_with_random_delay(self) -> None:
         """ Случайная задержка """
-        delay = self.EVENTS_DELAY * (random.random() / 3 + 1)
+        delay = self.game['events_delay'] * (random.random() / 3 + 1)
         time.sleep(delay)
 
     def get_client_token(self, client_id: str) -> str:
         """ Получить client_token """
         url = UrlsEnum.LOGIN_CLIENT
         payload = {
-            "appToken": self.game["appToken"],
+            "appToken": self.game["app_token"],
             "clientId": client_id,
             "clientOrigin": "deviceid"
         }
@@ -65,7 +65,7 @@ class CodeGenerator(Session):
     def emulate_progress(self, client_token: str) -> str:
         url = UrlsEnum.REGISTER_EVENT
         payload = {
-            "promoId": self.game["promoId"],
+            "promoId": self.game["promo_id"],
             "eventId": str(uuid.uuid4()),
             "eventOrigin": "undefined"
         }
@@ -80,7 +80,7 @@ class CodeGenerator(Session):
     def generate_key(self, client_token: str) -> str:
         """ Сгенерировать ключ """
         url = UrlsEnum.CREATE_CODE
-        payload = {"promoId": self.game["promoId"]}
+        payload = {"promoId": self.game["promo_id"]}
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {client_token}'
@@ -101,7 +101,7 @@ class CodeGenerator(Session):
             logging.error(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_GETTING_CLIENT_TOKEN.format(err=err))
             return None
 
-        for _ in range(10):
+        for _ in range(self.game['attempts_number']):
             self.sleep_with_random_delay()
             has_code = self.emulate_progress(client_token)
             if has_code:
@@ -133,5 +133,4 @@ class CodeGenerator(Session):
         for t in threads:
             t.join()
 
-        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_COUNT.format(game=self.game_name, count=len(keys)))
         return keys
