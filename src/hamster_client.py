@@ -169,7 +169,8 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
         else:
             logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
-        self.codes.remove(code)
+        if code in self.codes:
+            self.codes.remove(code)
 
     def _generate_minigame_codes(self) -> None:
         """ Сгенерировать коды из мини игр """
