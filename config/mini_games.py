@@ -35,4 +35,10 @@ MINI_GAMES = {
         'events_delay': 20,
         'attempts_number': 10
     },
+    'Polysphere': {
+        'app_token': '2aaf5aee-2cbc-47ec-8a3f-0962cc14bc71',
+        'promo_id': '2aaf5aee-2cbc-47ec-8a3f-0962cc14bc71',
+        'events_delay': 20,
+        'attempts_number': 20
+    },
 }
