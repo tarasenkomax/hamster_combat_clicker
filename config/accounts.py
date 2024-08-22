@@ -27,3 +27,6 @@ ACCOUNTS = [
         "generate_codes": True,
     },
 ]
+
+for account in ACCOUNTS:
+    account['generate_codes'] = False
