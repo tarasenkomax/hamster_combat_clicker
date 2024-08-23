@@ -41,4 +41,16 @@ MINI_GAMES = {
         'events_delay': 20,
         'attempts_number': 20
     },
+    'Mow and Trim': {
+        'app_token': 'ef319a80-949a-492e-8ee0-424fb5fc20a6',
+        'promo_id': 'ef319a80-949a-492e-8ee0-424fb5fc20a6',
+        'events_delay': 20,
+        'attempts_number': 20
+    },
+    'Mud Racing': {
+        'app_token': '8814a785-97fb-4177-9193-ca4180ff9da8',
+        'promo_id': '8814a785-97fb-4177-9193-ca4180ff9da8',
+        'events_delay': 20,
+        'attempts_number': 20
+    }
 }
