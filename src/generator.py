@@ -94,6 +94,7 @@ class CodeGenerator(Session):
 
     def generate_key_process(self) -> Union[str, None]:
         client_id = self.generate_client_id()
+
         try:
             client_token = self.get_client_token(client_id)
         except Exception as err:
@@ -101,10 +102,14 @@ class CodeGenerator(Session):
             return None
 
         for _ in range(self.game['attempts_number']):
-            self.sleep_with_random_delay()
-            has_code = self.emulate_progress(client_token)
-            if has_code:
-                break
+            try:
+                self.sleep_with_random_delay()
+                has_code = self.emulate_progress(client_token)
+                if has_code:
+                    break
+            except Exception as err:
+                logging.error(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_EMULATE_PROGRESS.format(err=err))
+                return None
 
         try:
             key = self.generate_key(client_token)

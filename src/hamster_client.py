@@ -172,19 +172,15 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if code in self.codes:
             self.codes.remove(code)
 
-    def _generate_minigame_codes(self) -> None:
-        """ Сгенерировать коды из мини игр """
-        for game in MINI_GAMES.keys():
-            key_gen = CodeGenerator(key_count=4, account_name=self.name, game_name=game)
-            self.codes += key_gen.execute()
-
-    def apply_all_codes(self):
-        """ Ввести все коды """
+    def apply_all_codes(self) -> None:
+        """ Сгенерировать коды из мини игр и применить их"""
         if self.features['generate_codes']:
             self.request = super().request
-            self._generate_minigame_codes()
-            for code in self.codes:
-                self._apply_minigame_code(code)
+            for game in MINI_GAMES.keys():
+                key_gen = CodeGenerator(key_count=4, account_name=self.name, game_name=game)
+                self.codes += key_gen.execute()
+                for code in self.codes:
+                    self._apply_minigame_code(code)
             self.request = retry(super().request)
 
     def check_task(self) -> None:
