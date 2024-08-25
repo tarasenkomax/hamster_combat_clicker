@@ -114,7 +114,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         """ Префикс с именем пользователя для логирования """
         return f"[{self.name}]\t "
 
-    def get_cipher_data(self) -> Dict:
+    def _get_cipher_data(self) -> Dict:
         """
         Получить информацио о шифре
 
@@ -135,7 +135,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def claim_daily_cipher(self) -> None:
         """ Разгадываем шифр """
-        cipher_data = self.get_cipher_data()
+        cipher_data = self._get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
             logging.info(MessageEnum.MSG_CRYPTED_CIPHER.format(cipher=raw_cipher))
@@ -172,7 +172,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if code in self.codes:
             self.codes.remove(code)
 
-    def apply_all_codes(self) -> None:
+    def generate_and_apply_all_codes(self) -> None:
         """ Сгенерировать коды из мини игр и применить их"""
         if self.features['generate_codes']:
             self.request = super().request
@@ -347,7 +347,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                     logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
 
     def execute(self) -> None:
-        self.apply_all_codes()
+        self.generate_and_apply_all_codes()
         self.sync()
         self.claim_daily_cipher()
         self.tap()
