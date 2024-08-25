@@ -168,7 +168,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if response.status_code == HTTPStatus.OK:
             logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
         else:
-            logging.info(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
+            logging.error(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_PROMO_APPLY.format(code=code))
         if code in self.codes:
             self.codes.remove(code)
 
