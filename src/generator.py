@@ -109,7 +109,6 @@ class CodeGenerator(Session):
                     break
             except Exception as err:
                 logging.error(self.log_prefix + MessageEnum.MSG_UNSUCCESSFUL_EMULATE_PROGRESS.format(err=err))
-                return None
 
         try:
             key = self.generate_key(client_token)
