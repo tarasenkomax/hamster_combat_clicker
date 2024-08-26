@@ -1,10 +1,4 @@
 MINI_GAMES = {
-    "My Clone Army": {
-        "app_token": "74ee0b5b-775e-4bee-974f-63e7f4d5bacb",
-        "promo_id": "fe693b26-b342-4159-8808-15e3ff7f8767",
-        'events_delay': 120,
-        'attempts_number': 11
-    },
     "Chain Cube 2048": {
         "app_token": "d1690a07-3780-4068-810f-9b5bbf2931b2",
         "promo_id": "b4170868-cef0-424f-8eb9-be0622e8e8e3",
