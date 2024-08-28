@@ -181,6 +181,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 self.codes += key_gen.execute()
                 for code in self.codes:
                     self._apply_minigame_code(code)
+            sleep(120)
             self.request = retry(super().request)
 
     def check_task(self) -> None:

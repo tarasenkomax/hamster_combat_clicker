@@ -28,5 +28,5 @@ ACCOUNTS = [
     },
 ]
 
-for account in ACCOUNTS:
-    account['generate_codes'] = False
+# for account in ACCOUNTS:
+#     account['generate_codes'] = False
