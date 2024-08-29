@@ -46,5 +46,11 @@ MINI_GAMES = {
         'promo_id': '8814a785-97fb-4177-9193-ca4180ff9da8',
         'events_delay': 20,
         'attempts_number': 20
-    }
+    },
+    'Cafe Dash': {
+        'app_token': 'bc0971b8-04df-4e72-8a3e-ec4dc663cd11',
+        'promo_id': 'bc0971b8-04df-4e72-8a3e-ec4dc663cd11',
+        'events_delay': 23,
+        'attempts_number': 16
+    },
 }
