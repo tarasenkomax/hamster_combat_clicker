@@ -44,4 +44,5 @@ class MessageEnum(StrEnum):
     MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения ключа {code}"
     MSG_UNSUCCESSFUL_EMULATE_PROGRESS = "Ошибка эмулирования игрового процесса {err}"
     MSG_UNSUCCESSFUL_GETTING_CLIENT_TOKEN = "Неуспешное получение клиентского токена: {err}"
+    MSG_UNHANDLED_ERROR = "Необработанная ошибка при генерации ключа: {err}"
     MSG_UNSUCCESSFUL_GENERATE_KEY = "Ошибка генерации ключа: {err}"

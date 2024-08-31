@@ -6,7 +6,7 @@ import time
 import uuid
 from datetime import datetime
 from http import HTTPStatus
-from typing import Dict, List, Union
+from typing import List, Union
 
 from requests import Session
 
@@ -17,12 +17,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(me
 
 
 class CodeGenerator(Session):
-    def __init__(self, game_name: str, key_count: int, account_name: str) -> None:
+    def __init__(self, promo_id: str, key_count: int, account_name: str) -> None:
         super().__init__()
-        self.game_name = game_name
+        self.game = MINI_GAMES[promo_id]
+        self.promo_id = promo_id
         self.key_count = key_count
         self.account_name = account_name
-        self.game: Dict = MINI_GAMES[self.game_name]
 
     @property
     def log_prefix(self) -> str:
@@ -64,7 +64,7 @@ class CodeGenerator(Session):
     def emulate_progress(self, client_token: str) -> str:
         url = UrlsEnum.REGISTER_EVENT
         payload = {
-            "promoId": self.game["promo_id"],
+            "promoId": self.promo_id,
             "eventId": str(uuid.uuid4()),
             "eventOrigin": "undefined"
         }
@@ -79,7 +79,7 @@ class CodeGenerator(Session):
     def generate_key(self, client_token: str) -> str:
         """ Сгенерировать ключ """
         url = UrlsEnum.CREATE_CODE
-        payload = {"promoId": self.game["promo_id"]}
+        payload = {"promoId": self.promo_id}
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {client_token}'
@@ -121,7 +121,7 @@ class CodeGenerator(Session):
         keys = []
         threads = []
 
-        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_GAME.format(game=self.game_name))
+        logging.info(self.log_prefix + MessageEnum.MSG_GENERATE_KEYS_GAME.format(game=self.game['name']))
 
         def worker():
             key = self.generate_key_process()

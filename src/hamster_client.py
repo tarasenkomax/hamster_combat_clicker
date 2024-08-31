@@ -1,6 +1,7 @@
 import logging
 import re
 from base64 import b64decode
+from datetime import datetime
 from http import HTTPStatus
 from time import sleep, time
 from typing import Dict, List, Union
@@ -42,6 +43,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     tasks: List = None
     task_checked_at: float = None
     codes: List[str] = []
+    keys_not_received: Dict = None
 
     def __init__(self, token, name="NoName", **kwargs) -> None:
         super().__init__()
@@ -129,9 +131,16 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         result = self.post(url=UrlsEnum.CONFIG).json()
         return result['dailyCipher']
 
-    def log_stats(self):
+    def log_stats(self) -> None:
         """ Логирование статистики"""
         logging.info(self.log_prefix + " ".join(f"{k}: {v} |" for k, v in self.stats.items()))
+
+    def log_keys(self) -> None:
+        """ Логирование информации о неполученных ключах """
+        if self.keys_not_received:
+            log_dict = {MINI_GAMES[game]['name']: f'{keys}/4' for game, keys in self.keys_not_received.items()}
+            logging.info(
+                self.log_prefix + 'Неполученные ключи: ' + " ".join(f"{k}: {v} |" for k, v in log_dict.items()))
 
     def claim_daily_cipher(self) -> None:
         """ Разгадываем шифр """
@@ -172,15 +181,50 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if code in self.codes:
             self.codes.remove(code)
 
+    def _get_minigame_keys_info(self) -> None:
+        """ Получить информацию о  минииграх в которы можно получить ключи"""
+        today_date = datetime.now().date()
+        mini_games_info = {}
+        promos = self.state['promos']
+
+        for promo in promos:
+            if promo['promoId'] in MINI_GAMES.keys():
+                if datetime.strptime(promo['rewardsLastTime'], "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day:
+                    # если максимальное количество ключей за день увеличится - посмотреть receiveKeysToday
+                    if promo['rewardsToday'] != 4:
+                        mini_games_info[promo['promoId']] = promo['rewardsToday']
+                else:
+                    mini_games_info[promo['promoId']] = 0
+        self.keys_not_received = mini_games_info
+
+    def _generate_and_apply_all_codes_for_one_game(self, promo_id: str, keys: int) -> None:
+        """
+        Сгенерировать и применить коды для одной игры
+        :param promo_id: идентификатор игры
+        :param keys: количество ключей
+        """
+        try:
+            key_gen = CodeGenerator(key_count=4 - keys, account_name=self.name, promo_id=promo_id)
+            self.codes += key_gen.execute()
+            for code in self.codes:
+                self._apply_minigame_code(code)
+        except Exception as err:
+            logging.error(self.log_prefix + MessageEnum.MSG_UNHANDLED_ERROR.format(err=err))
+
     def generate_and_apply_all_codes(self) -> None:
-        """ Сгенерировать коды из мини игр и применить их"""
-        if self.features['generate_codes']:
+        """ Сгенерировать коды из мини игр и применить их """
+        self._get_minigame_keys_info()
+        self.log_keys()
+        # Если игра есть в MINI_GAMES, но нету в ответе от сервера, генерируем один ключ.
+        # После этого сервер отдаёт информацию о минииграх с новой игрой.
+        for promo_id, game_info in MINI_GAMES.items():
+            if promo_id not in [promo['promoId'] for promo in self.state['promos']]:
+                self._generate_and_apply_all_codes_for_one_game(promo_id=promo_id, keys=1)
+
+        if self.keys_not_received:
             self.request = super().request
-            for game in MINI_GAMES.keys():
-                key_gen = CodeGenerator(key_count=4, account_name=self.name, game_name=game)
-                self.codes += key_gen.execute()
-                for code in self.codes:
-                    self._apply_minigame_code(code)
+            for promo_id, keys in self.keys_not_received.items():
+                self._generate_and_apply_all_codes_for_one_game(promo_id=promo_id, keys=keys)
             sleep(120)
             self.request = retry(super().request)
 
@@ -221,7 +265,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         response = self.post(UrlsEnum.LIST_TASKS)
         if response.status_code == HTTPStatus.OK:
             result = response.json()
-            self.tasks = list(filter(lambda d: d['isCompleted'] != True, result["tasks"]))
+            self.tasks = list(filter(lambda d: not d['isCompleted'], result["tasks"]))
 
     def execute_youtube_tasks(self):
         """ Выполнить задания по просмотру youtube видео """
@@ -348,8 +392,8 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                     logging.info(self.log_prefix + MessageEnum.MSG_COMBO_EARNED.format(coins=combo['bonusCoins']))
 
     def execute(self) -> None:
-        self.generate_and_apply_all_codes()
         self.sync()
+        self.generate_and_apply_all_codes()
         self.claim_daily_cipher()
         self.tap()
         self.buy_upgrades()
