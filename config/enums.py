@@ -36,8 +36,8 @@ class MessageEnum(StrEnum):
     MSG_CIPHER = "Новый шифр: {cipher}"
     MSG_CRYPTED_CIPHER = "Шифрованный шифр: {cipher}"
 
-    MSG_TASK_COMPLETED = "Задание выполнено. Награда: {reward}"
-    MSG_TASK_NOT_COMPLETED = "Задание не выполнено"
+    MSG_YOUTUBE_TASK_COMPLETED = "Youtube видео просмотрено. Награда получена"
+    MSG_YOUTUBE_TASK_NOT_COMPLETED = "Youtube видео не просмотрено"
 
     MSG_SUCCESSFUL_PROMO_APPLY = "Ключ {code} успешно применён"
     MSG_GENERATE_KEYS_GAME = "Генерация ключей для {game}..."

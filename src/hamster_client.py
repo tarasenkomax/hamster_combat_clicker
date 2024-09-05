@@ -138,7 +138,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
     def log_keys(self) -> None:
         """ Логирование информации о неполученных ключах """
         if self.keys_not_received:
-            log_dict = {MINI_GAMES[game]['name']: f'{keys}/4' for game, keys in self.keys_not_received.items()}
+            log_dict = {
+                MINI_GAMES[game]['name']: f"{keys}/{MINI_GAMES[game]['keys_per_day']}" for game, keys in
+                self.keys_not_received.items()
+            }
             logging.info(
                 self.log_prefix + 'Неполученные ключи: ' + " ".join(f"{k}: {v} |" for k, v in log_dict.items()))
 
@@ -188,13 +191,26 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         promos = self.state['promos']
 
         for promo in promos:
-            if promo['promoId'] in MINI_GAMES.keys():
-                if datetime.strptime(promo['rewardsLastTime'], "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day:
-                    # если максимальное количество ключей за день увеличится - посмотреть receiveKeysToday
-                    if promo['rewardsToday'] != 4:
-                        mini_games_info[promo['promoId']] = promo['rewardsToday']
+            promo_id = promo['promoId']
+            rewards_today = promo['rewardsToday']
+            rewards_last_time = promo['rewardsLastTime']
+
+            if promo_id in MINI_GAMES.keys():
+                if datetime.strptime(rewards_last_time, "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day:
+                    # todo если максимальное количество ключей за день увеличится - посмотреть receiveKeysToday
+                    if rewards_today != 4:
+                        mini_games_info[promo_id] = rewards_today
                 else:
-                    mini_games_info[promo['promoId']] = 0
+                    mini_games_info[promo_id] = 0
+
+                # костыль, потому что нет понимания откуда берется максимальное кол-во ключей
+                if (
+                    datetime.strptime(rewards_last_time, "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day
+                    and promo_id == '112887b0-a8af-4eb2-ac63-d82df78283d9'
+                    and rewards_today == 8
+                ):
+                    mini_games_info.pop(promo_id)
+
         self.keys_not_received = mini_games_info
 
     def _generate_and_apply_all_codes_for_one_game(self, promo_id: str, keys: int) -> None:
@@ -204,7 +220,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         :param keys: количество ключей
         """
         try:
-            key_gen = CodeGenerator(key_count=4 - keys, account_name=self.name, promo_id=promo_id)
+            key_gen = CodeGenerator(
+                key_count=MINI_GAMES[promo_id]['keys_per_day'] - keys,
+                account_name=self.name,
+                promo_id=promo_id,
+            )
             self.codes += key_gen.execute()
             for code in self.codes:
                 self._apply_minigame_code(code)
@@ -228,10 +248,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             sleep(120)
             self.request = retry(super().request)
 
-    def check_task(self) -> None:
+    def get_daily_reward(self) -> None:
         """ Получение ежедневной награды """
         data = {
-            "taskId": "streak_days"
+            "taskId": "streak_days_special"  # было streak_days
         }
         if not self.task_checked_at or time() - self.task_checked_at >= 60 * 60:
             self.post(url=UrlsEnum.CHECK_TASK, json=data)
@@ -272,22 +292,19 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         self._update_tasks()
         for task in self.tasks:
             task_id = task['id']
-            reward = task['rewardCoins']
 
             if not task_id.startswith('hamster_youtube'):
                 continue
 
-            if reward > 0:
-                data = {'taskId': task_id}
-                response = self.post(UrlsEnum.CHECK_TASK, json=data)
-                if response.status_code == HTTPStatus.OK:
-                    result = response.json()
-                    result = result["task"]
-                    is_completed = result.get('isCompleted')
-                    if is_completed:
-                        logging.info(self.log_prefix + MessageEnum.MSG_TASK_COMPLETED.format(reward=reward))
-                    else:
-                        logging.info(self.log_prefix + MessageEnum.MSG_TASK_NOT_COMPLETED)
+            data = {'taskId': task_id}
+            response = self.post(UrlsEnum.CHECK_TASK, json=data)
+            if response.status_code == HTTPStatus.OK:
+                result = response.json()
+                result = result["task"]
+                if result.get('isCompleted'):
+                    logging.info(self.log_prefix + MessageEnum.MSG_YOUTUBE_TASK_COMPLETED)
+                else:
+                    logging.info(self.log_prefix + MessageEnum.MSG_YOUTUBE_TASK_NOT_COMPLETED)
 
     def _upgrade_card(self, upgrade_name) -> Response:
         """
@@ -397,7 +414,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         self.claim_daily_cipher()
         self.tap()
         self.buy_upgrades()
-        self.check_task()
+        self.get_daily_reward()
         self.execute_youtube_tasks()
         self.claim_combo_reward()
         self.apply_boost()
