@@ -197,19 +197,10 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
             if promo_id in MINI_GAMES.keys():
                 if datetime.strptime(rewards_last_time, "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day:
-                    # todo если максимальное количество ключей за день увеличится - посмотреть receiveKeysToday
-                    if rewards_today != 4:
+                    if rewards_today != MINI_GAMES[promo_id]['keys_per_day']:
                         mini_games_info[promo_id] = rewards_today
                 else:
                     mini_games_info[promo_id] = 0
-
-                # костыль, потому что нет понимания откуда берется максимальное кол-во ключей
-                if (
-                    datetime.strptime(rewards_last_time, "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day
-                    and promo_id == '112887b0-a8af-4eb2-ac63-d82df78283d9'
-                    and rewards_today == 8
-                ):
-                    mini_games_info.pop(promo_id)
 
         self.keys_not_received = mini_games_info
 
