@@ -10,6 +10,7 @@ class UrlsEnum(StrEnum):
     BOOSTS_FOR_BUY = BASE_URL + '/boosts-for-buy',
     BUY_UPGRADE = BASE_URL + '/buy-upgrade',
     APPLY_PROMO = BASE_URL + '/apply-promo',
+    GET_PROMOS = BASE_URL + '/get-promos',
     LIST_TASKS = BASE_URL + '/list-tasks',
     CHECK_TASK = BASE_URL + '/check-task',
     BUY_BOOST = BASE_URL + '/buy-boost',
@@ -25,16 +26,16 @@ class UrlsEnum(StrEnum):
 
 class MessageEnum(StrEnum):
     MSG_BUY_UPGRADE = "Прокачал: {name} : ур.{level} за {price} даст +{profitPerHourDelta}/час"
-    MSG_SESSION_ERROR = "Ошибка во время выполнения запроса: {error}"
     MSG_COMBO_EARNED = "Получено вознаграждение за комбо: {coins}"
-    MSG_BAD_RESPONSE = "Плохой ответ от сервера: {status} {text}"
     MSG_CLAIMED_COMBO_CARDS = "Полученные комбо карты: {cards}"
     MSG_TAP = "Тапнул на {taps_count} монет"
     MSG_SYNC = "Данные обновлены"
+    MSG_SESSION_ERROR = "Ошибка во время выполнения запроса: {error}"
+    MSG_BAD_RESPONSE = "Плохой ответ от сервера: {status} {text}"
     MSG_SYNC_ERROR = "Ошибка при обновлении данных пользователя: {error}"
 
     MSG_CIPHER = "Новый шифр: {cipher}"
-    MSG_CRYPTED_CIPHER = "Шифрованный шифр: {cipher}"
+    MSG_ENCRYPTED_CIPHER = "Шифрованный шифр: {cipher}"
 
     MSG_YOUTUBE_TASK_COMPLETED = "Youtube видео просмотрено. Награда получена"
     MSG_YOUTUBE_TASK_NOT_COMPLETED = "Youtube видео не просмотрено"

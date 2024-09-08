@@ -150,7 +150,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         cipher_data = self._get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
-            logging.info(MessageEnum.MSG_CRYPTED_CIPHER.format(cipher=raw_cipher))
+            logging.info(MessageEnum.MSG_ENCRYPTED_CIPHER.format(cipher=raw_cipher))
             re_result = re.search('\d+', raw_cipher[3:])  # noqa W605
             if re_result:
                 str_len = re_result[0]
@@ -335,7 +335,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             payback=self.sorted_by_payback,
             price=self.sorted_by_price,
             profit=self.sorted_by_profit,
-            profitness=self.sorted_by_profitness
+            profitabiliy=self.sorted_by_profitability
         )
         prepared = []
         for upgrade in self.upgrades.get("upgradesForBuy"):

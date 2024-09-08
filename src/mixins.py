@@ -16,7 +16,7 @@ class CardSorterMixin:
         return sorted(prepared, key=lambda x: x["profitPerHourDelta"], reverse=True)
 
     @staticmethod
-    def sorted_by_profitness(prepared: List) -> List:
+    def sorted_by_profitability(prepared: List) -> List:
         """ Сортировка по цене профиту (отношение прибыльности к цене) """
         return sorted(prepared, key=lambda x: x['profitPerHourDelta'] / x['price'], reverse=True)
 
