@@ -97,7 +97,6 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         """ Статистика """
         return {
             "уровень": self.level,
-            "энергия": self.available_taps,
             'баланс': re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.balance)),
             'ключи': re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.keys)),
             "доход в час": re.sub(r'(?<!^)(?=(\d{3})+$)', ' ', str(self.state['earnPassivePerHour']))
@@ -406,7 +405,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def execute(self) -> None:
         self.sync()
-        # self.generate_and_apply_all_codes()
+        self.generate_and_apply_all_codes()
         self.claim_daily_cipher()
         self.tap()
         self.buy_upgrades()
