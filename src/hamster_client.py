@@ -1,17 +1,17 @@
 import logging
 import re
 from base64 import b64decode
-from datetime import datetime
 from http import HTTPStatus
 from time import sleep, time
 from typing import Dict, List, Union
+from uuid import UUID
 
 from requests import Response, Session
 
 from config.enums import MessageEnum, UrlsEnum
 from config.headers import HEADERS
-from config.mini_games import MINI_GAMES
 from config.morse import MORSE_CODE_DICT
+from config.types import Boosts, CiperData, PromoInfo, PromoState
 from generator import CodeGenerator
 from mixins import CardSorterMixin, TimestampMixin
 
@@ -36,22 +36,17 @@ def retry(func):
 
 
 class HamsterClient(Session, TimestampMixin, CardSorterMixin):
-    state: Dict = None
-    promos: List[str] = None
-    boosts: Dict = None
-    upgrades: Dict = None
-    tasks: List = None
-    task_checked_at: float = None
-    codes: List[str] = []
-    keys_not_received: Dict = None
-
-    def __init__(self, token, name="NoName", **kwargs) -> None:
+    def __init__(self, token: str, name: str = "NoName", **kwargs) -> None:
         super().__init__()
         self.features = kwargs
         self.headers: Dict = HEADERS.copy()
         self.headers["Authorization"]: str = f"Bearer {token}"
         self.request = retry(super().request)
         self.name: str = name
+        self.task_checked_at: Union[float, None] = None
+        self.codes: List[str] = []
+        self.state: Dict = {}
+        # self.upgrades: Dict = {}
 
     @property
     def balance(self) -> Union[int, None]:
@@ -67,10 +62,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     @property
     def keys(self) -> Union[int, None]:
-        """
-        Количество ключей
-        параметр totalKeys имеет такое же значение как и balanceKeys. Возможно изменится после траты ключей.
-        """
+        """ Количество ключей """
         if self.state:
             return self.state["balanceKeys"]
 
@@ -87,7 +79,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             return self.state["tapsRecoverPerSec"]
 
     @property
-    def _is_taps_boost_available(self) -> Union[bool, None]:
+    def is_taps_boost_available(self) -> Union[True, None]:
         """ Проверка, доступны ли усиления """
         self._update_boosts_list()
         if not self.boosts:
@@ -116,18 +108,8 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         """ Префикс с именем пользователя для логирования """
         return f"[{self.name}]\t "
 
-    def _get_cipher_data(self) -> Dict:
-        """
-        Получить информацио о шифре
-
-        Example:
-            {
-                'cipher': 'REV4GSQ==',
-                'bonusCoins': 1000000,
-                'isClaimed': True,
-                'remainSeconds': 27144
-            }
-        """
+    def _get_cipher_data(self) -> CiperData:
+        """ Получить информацию о шифре """
         result = self.post(url=UrlsEnum.CONFIG).json()
         return result['dailyCipher']
 
@@ -137,10 +119,11 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def log_keys(self) -> None:
         """ Логирование информации о неполученных ключах """
-        if self.keys_not_received:
-            log_dict = {
-                MINI_GAMES[game]['name']: f"{keys}/{MINI_GAMES[game]['keys_per_day']}" for game, keys in
-                self.keys_not_received.items()
+        if self.not_completed_mini_games:
+            log_dict: Dict[str, str] = {
+                list(filter(lambda x: x.get('promoId') == game_id, self.promos_info))[0]['title']:
+                    f"{keys}/{list(filter(lambda x: x.get('promoId') == game_id, self.promos_info))[0]['keysPerDay']}"
+                for game_id, keys in self.not_completed_mini_games.items()
             }
             logging.info(
                 self.log_prefix + 'Неполученные ключи: ' + " ".join(f"{k}: {v} |" for k, v in log_dict.items()))
@@ -150,7 +133,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         cipher_data = self._get_cipher_data()
         if not cipher_data['isClaimed']:
             raw_cipher = cipher_data['cipher']
-            logging.info(MessageEnum.MSG_ENCRYPTED_CIPHER.format(cipher=raw_cipher))
+            logging.info(self.log_prefix + MessageEnum.MSG_ENCRYPTED_CIPHER.format(cipher=raw_cipher))
             re_result = re.search('\d+', raw_cipher[3:])  # noqa W605
             if re_result:
                 str_len = re_result[0]
@@ -158,14 +141,19 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                 raw_cipher = raw_cipher.encode()
                 cipher = b64decode(raw_cipher).decode()
                 morse_cipher = "  ".join((MORSE_CODE_DICT.get(char, " ") for char in cipher))
-                logging.info(MessageEnum.MSG_CIPHER.format(cipher=cipher + " | " + morse_cipher))
-                self.post(url=UrlsEnum.CLAIM_DAILY_CIPHER, json={"cipher": cipher})
+                logging.info(self.log_prefix + MessageEnum.MSG_CIPHER.format(cipher=cipher + " | " + morse_cipher))
+                self.post(
+                    url=UrlsEnum.CLAIM_DAILY_CIPHER,
+                    json={
+                        "cipher": cipher,
+                    },
+                )
 
     def sync(self) -> None:
         """ Обновить данные о пользователе """
         try:
             response = self.post(url=UrlsEnum.SYNC)
-            self.state = response.json()["clickerUser"]
+            self.state: Dict = response.json()["clickerUser"]
             logging.info(self.log_prefix + MessageEnum.MSG_SYNC)
         except Exception as error:
             logging.error(self.log_prefix + MessageEnum.MSG_SYNC_ERROR.format(error=error))
@@ -175,8 +163,12 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         Ввести код из мини игры для получения ключей
         :param code: код для ввода
         """
-        data = {"promoCode": code}
-        response = self.post(url=UrlsEnum.APPLY_PROMO, json=data)
+        response = self.post(
+            url=UrlsEnum.APPLY_PROMO,
+            json={
+                "promoCode": code,
+            },
+        )
         if response.status_code == HTTPStatus.OK:
             logging.info(self.log_prefix + MessageEnum.MSG_SUCCESSFUL_PROMO_APPLY.format(code=code))
         else:
@@ -184,35 +176,39 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if code in self.codes:
             self.codes.remove(code)
 
-    def _get_minigame_keys_info(self) -> None:
-        """ Получить информацию о  минииграх в которы можно получить ключи"""
-        today_date = datetime.now().date()
-        mini_games_info = {}
-        promos = self.state['promos']
+    def _update_promos_info(self) -> None:
+        """ Обновить информацию о всех минииграх """
+        response = self.post(url=UrlsEnum.GET_PROMOS).json()
+        self.promos_state: List[PromoState] = response['states']
+        self.promos_info: List[PromoInfo] = [
+            {
+                'promoId': promo['promoId'],
+                'keysPerDay': promo['keysPerDay'],
+                'title': promo['title']['en'],
+                'rewardType': promo['rewardType'],
+            }
+            for promo in response['promos']
+        ]
 
-        for promo in promos:
+    def _update_not_completed_mini_games_info(self) -> None:
+        """ Обновить информацию о минииграх в которых получены не все ключи """
+        self.not_completed_mini_games: Dict[UUID, int] = {}
+        for promo in self.promos_info:
             promo_id = promo['promoId']
-            rewards_today = promo['rewardsToday']
-            rewards_last_time = promo['rewardsLastTime']
+            promo_state: PromoState = list(filter(lambda x: x.get('promoId') == promo_id, self.promos_state))[0]
+            if promo_state['receiveKeysToday'] < promo['keysPerDay']:
+                self.not_completed_mini_games[promo_id] = promo_state['receiveKeysToday']
 
-            if promo_id in MINI_GAMES.keys():
-                if datetime.strptime(rewards_last_time, "%Y-%m-%dT%H:%M:%S.%fZ").date().day == today_date.day:
-                    if rewards_today != MINI_GAMES[promo_id]['keys_per_day']:
-                        mini_games_info[promo_id] = rewards_today
-                else:
-                    mini_games_info[promo_id] = 0
-
-        self.keys_not_received = mini_games_info
-
-    def _generate_and_apply_all_codes_for_one_game(self, promo_id: str, keys: int) -> None:
+    def _generate_and_apply_all_codes_for_one_game(self, promo_id: UUID, keys: int) -> None:
         """
         Сгенерировать и применить коды для одной игры
         :param promo_id: идентификатор игры
         :param keys: количество ключей
         """
+        promo_info: PromoInfo = list(filter(lambda x: x.get('promoId') == promo_id, self.promos_info))[0]
         try:
             key_gen = CodeGenerator(
-                key_count=MINI_GAMES[promo_id]['keys_per_day'] - keys,
+                key_count=promo_info['keysPerDay'] - keys,
                 account_name=self.name,
                 promo_id=promo_id,
             )
@@ -224,39 +220,40 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def generate_and_apply_all_codes(self) -> None:
         """ Сгенерировать коды из мини игр и применить их """
-        self._get_minigame_keys_info()
+        self._update_promos_info()
+        self._update_not_completed_mini_games_info()
         self.log_keys()
-        # Если игра есть в MINI_GAMES, но нету в ответе от сервера, генерируем один ключ.
-        # После этого сервер отдаёт информацию о минииграх с новой игрой.
-        for promo_id, game_info in MINI_GAMES.items():
-            if promo_id not in [promo['promoId'] for promo in self.state['promos']]:
-                self._generate_and_apply_all_codes_for_one_game(promo_id=promo_id, keys=1)
-
-        if self.keys_not_received:
+        if self.not_completed_mini_games:
             self.request = super().request
-            for promo_id, keys in self.keys_not_received.items():
-                self._generate_and_apply_all_codes_for_one_game(promo_id=promo_id, keys=keys)
-            sleep(120)
+            for promo_id, keys in self.not_completed_mini_games.items():
+                self._generate_and_apply_all_codes_for_one_game(
+                    promo_id=promo_id,
+                    keys=keys,
+                )
             self.request = retry(super().request)
 
     def get_daily_reward(self) -> None:
         """ Получение ежедневной награды """
-        data = {
-            "taskId": "streak_days_special"  # было streak_days
-        }
         if not self.task_checked_at or time() - self.task_checked_at >= 60 * 60:
-            self.post(url=UrlsEnum.CHECK_TASK, json=data)
+            self.post(
+                url=UrlsEnum.CHECK_TASK,
+                json={
+                    "taskId": "streak_days_special",
+                },
+            )
             self.task_checked_at = time()
 
     def tap(self) -> None:
         """ Тапаем на монеты максимальное кол-во раз """
         taps_count = self.available_taps or self.recover_per_sec
-        data = {
-            "count": taps_count,
-            "availableTaps": self.available_taps - taps_count,
-            "timestamp": self.timestamp()
-        }
-        self.post(url=UrlsEnum.TAP, json=data).json()
+        self.post(
+            url=UrlsEnum.TAP,
+            json={
+                "count": taps_count,
+                "availableTaps": self.available_taps - taps_count,
+                "timestamp": self.timestamp()
+            },
+        )
         logging.info(self.log_prefix + MessageEnum.MSG_TAP.format(taps_count=taps_count))
 
     def apply_boost(self, boost_name='BoostFullAvailableTaps') -> None:
@@ -264,12 +261,14 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         Взять усиление
         :param boost_name: название усиления
         """
-        if self._is_taps_boost_available:
-            data = {
-                "boostId": boost_name,
-                "timestamp": self.timestamp()
-            }
-            self.post(url=UrlsEnum.BUY_BOOST, json=data)
+        if self.is_taps_boost_available:
+            self.post(
+                url=UrlsEnum.BUY_BOOST,
+                json={
+                    "boostId": boost_name,
+                    "timestamp": self.timestamp()
+                },
+            )
 
     def _update_tasks(self):
         """ Обновить список заданий """
@@ -287,8 +286,12 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             if not task_id.startswith('hamster_youtube'):
                 continue
 
-            data = {'taskId': task_id}
-            response = self.post(UrlsEnum.CHECK_TASK, json=data)
+            response = self.post(
+                url=UrlsEnum.CHECK_TASK,
+                json={
+                    'taskId': task_id,
+                },
+            )
             if response.status_code == HTTPStatus.OK:
                 result = response.json()
                 result = result["task"]
@@ -302,16 +305,18 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         Купить карточку
         :param upgrade_name: название карточки
         """
-        data = {
-            "upgradeId": upgrade_name,
-            "timestamp": self.timestamp()
-        }
-        response = self.post(url=UrlsEnum.BUY_UPGRADE, json=data)
+        response = self.post(
+            url=UrlsEnum.BUY_UPGRADE,
+            json={
+                "upgradeId": upgrade_name,
+                "timestamp": self.timestamp(),
+            },
+        )
         return response
 
     def _upgrades_list(self) -> None:
         """ Обновить список карточек """
-        self.upgrades = self.post(url=UrlsEnum.UPGRADES_FOR_BUY).json()
+        self.upgrades: Dict = self.post(url=UrlsEnum.UPGRADES_FOR_BUY).json()
 
     def _update_boosts_list(self) -> None:
         """
@@ -320,7 +325,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
          - BoostMaxTaps
          - BoostFullAvailableTaps
          """
-        self.boosts = self.post(url=UrlsEnum.BOOSTS_FOR_BUY).json()
+        self.boosts: Boosts = self.post(url=UrlsEnum.BOOSTS_FOR_BUY).json()
 
     def _get_sorted_upgrades(self, method):
         """
@@ -401,7 +406,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
 
     def execute(self) -> None:
         self.sync()
-        self.generate_and_apply_all_codes()
+        # self.generate_and_apply_all_codes()
         self.claim_daily_cipher()
         self.tap()
         self.buy_upgrades()

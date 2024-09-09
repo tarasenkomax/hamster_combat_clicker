@@ -12,17 +12,18 @@ from requests import Session
 
 from config.enums import MessageEnum, UrlsEnum
 from config.mini_games import MINI_GAMES
+from config.types import MiniGame
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s   %(message)s")
 
 
 class CodeGenerator(Session):
-    def __init__(self, promo_id: str, key_count: int, account_name: str) -> None:
+    def __init__(self, promo_id: uuid.UUID, key_count: int, account_name: str) -> None:
         super().__init__()
-        self.game = MINI_GAMES[promo_id]
-        self.promo_id = promo_id
-        self.key_count = key_count
-        self.account_name = account_name
+        self.game: MiniGame = MINI_GAMES[promo_id]
+        self.promo_id: uuid.UUID = promo_id
+        self.key_count: int = key_count
+        self.account_name: str = account_name
 
     @property
     def log_prefix(self) -> str:
@@ -43,14 +44,18 @@ class CodeGenerator(Session):
 
     def get_client_token(self, client_id: str) -> str:
         """ Получить client_token """
-        url = UrlsEnum.LOGIN_CLIENT
-        payload = {
-            "appToken": self.game["app_token"],
-            "clientId": client_id,
-            "clientOrigin": "deviceid"
-        }
-        headers = {'Content-Type': 'application/json'}
-        response = self.post(url, json=payload, headers=headers)
+
+        response = self.post(
+            url=UrlsEnum.LOGIN_CLIENT,
+            json={
+                "appToken": self.game["app_token"],
+                "clientId": client_id,
+                "clientOrigin": "deviceid",
+            },
+            headers={
+                'Content-Type': 'application/json',
+            }
+        )
         data = response.json()
 
         if response.status_code != HTTPStatus.OK:
@@ -62,29 +67,34 @@ class CodeGenerator(Session):
         return data["clientToken"]
 
     def emulate_progress(self, client_token: str) -> str:
-        url = UrlsEnum.REGISTER_EVENT
-        payload = {
-            "promoId": self.promo_id,
-            "eventId": str(uuid.uuid4()),
-            "eventOrigin": "undefined"
-        }
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {client_token}'
-        }
-        response = self.post(url, json=payload, headers=headers)
+
+        response = self.post(
+            url=UrlsEnum.REGISTER_EVENT,
+            json={
+                "promoId": self.promo_id,
+                "eventId": str(uuid.uuid4()),
+                "eventOrigin": "undefined",
+            },
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {client_token}',
+            },
+        )
         data = response.json()
         return data.get("hasCode", False)
 
     def generate_key(self, client_token: str) -> str:
         """ Сгенерировать ключ """
-        url = UrlsEnum.CREATE_CODE
-        payload = {"promoId": self.promo_id}
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {client_token}'
-        }
-        response = self.post(url, json=payload, headers=headers)
+        response = self.post(
+            url=UrlsEnum.CREATE_CODE,
+            json={
+                "promoId": self.promo_id,
+            },
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {client_token}',
+            },
+        )
         data = response.json()
 
         if not response.ok:
@@ -92,7 +102,7 @@ class CodeGenerator(Session):
 
         return data["promoCode"]
 
-    def generate_key_process(self) -> Union[str, None]:
+    def generate_key_process(self) -> Union[str, None]:  # noqa C901
         client_id = self.generate_client_id()
 
         try:
@@ -132,7 +142,6 @@ class CodeGenerator(Session):
             t = threading.Thread(target=worker)
             threads.append(t)
             t.start()
-
         for t in threads:
             t.join()
 
