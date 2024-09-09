@@ -41,6 +41,7 @@ class MessageEnum(StrEnum):
     MSG_YOUTUBE_TASK_NOT_COMPLETED = "Youtube видео не просмотрено"
 
     MSG_SUCCESSFUL_PROMO_APPLY = "Ключ {code} успешно применён"
+    MSG_NEW_GAME_FOUND = "Найдена новая игра с promo_id = {promo_id}"
     MSG_GENERATE_KEYS_GAME = "Генерация ключей для {game}..."
     MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения ключа {code}"
     MSG_UNSUCCESSFUL_EMULATE_PROGRESS = "Ошибка эмулирования игрового процесса {err}"

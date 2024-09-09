@@ -10,6 +10,7 @@ from requests import Response, Session
 
 from config.enums import MessageEnum, UrlsEnum
 from config.headers import HEADERS
+from config.mini_games import MINI_GAMES
 from config.morse import MORSE_CODE_DICT
 from config.types import Boosts, CiperData, PromoInfo, PromoState
 from generator import CodeGenerator
@@ -225,10 +226,13 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         if self.not_completed_mini_games:
             self.request = super().request
             for promo_id, keys in self.not_completed_mini_games.items():
-                self._generate_and_apply_all_codes_for_one_game(
-                    promo_id=promo_id,
-                    keys=keys,
-                )
+                if promo_id in MINI_GAMES.keys():
+                    self._generate_and_apply_all_codes_for_one_game(
+                        promo_id=promo_id,
+                        keys=keys,
+                    )
+                else:
+                    logging.info(self.log_prefix + MessageEnum.MSG_NEW_GAME_FOUND.format(promo_id=promo_id))
             self.request = retry(super().request)
 
     def get_daily_reward(self) -> None:
