@@ -13,6 +13,6 @@ ACCOUNTS: List[AccountDict] = [
         "name": "Т",
         "token": "17184376542545fCPKS5wju3SUKLnPzk6k3PwlEiDjZmm8uiZrLlI4qMTyxhph4GSfnoqE6ya592x1350814077",
         "buy_upgrades": False,
-        "buy_decision_method": "profitabiliy",
+        "buy_decision_method": "profitability",
     },
 ]
