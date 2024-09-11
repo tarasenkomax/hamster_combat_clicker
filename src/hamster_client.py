@@ -343,7 +343,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
             payback=self.sorted_by_payback,
             price=self.sorted_by_price,
             profit=self.sorted_by_profit,
-            profitabiliy=self.sorted_by_profitability
+            profitability=self.sorted_by_profitability
         )
         prepared = []
         for upgrade in self.upgrades.get("upgradesForBuy"):
