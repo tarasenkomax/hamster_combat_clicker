@@ -195,9 +195,12 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
         self.not_completed_mini_games: Dict[UUID, int] = {}
         for promo in self.promos_info:
             promo_id = promo['promoId']
-            promo_state: PromoState = list(filter(lambda x: x.get('promoId') == promo_id, self.promos_state))[0]
-            if promo_state['receiveKeysToday'] < promo['keysPerDay']:
-                self.not_completed_mini_games[promo_id] = promo_state['receiveKeysToday']
+            try:
+                promo_state: PromoState = list(filter(lambda x: x.get('promoId') == promo_id, self.promos_state))[0]
+                if promo_state['receiveKeysToday'] < promo['keysPerDay']:
+                    self.not_completed_mini_games[promo_id] = promo_state['receiveKeysToday']
+            except IndexError:
+                self.not_completed_mini_games[promo_id] = 0
 
     def _generate_and_apply_all_codes_for_one_game(self, promo_id: UUID, keys: int) -> None:
         """
@@ -232,7 +235,7 @@ class HamsterClient(Session, TimestampMixin, CardSorterMixin):
                         keys=keys,
                     )
                 else:
-                    logging.info(self.log_prefix + MessageEnum.MSG_NEW_GAME_FOUND.format(promo_id=promo_id))
+                    logging.info(self.log_prefix + MessageEnum.MSG_NEW_GAME_NOT_FOUND.format(promo_id=promo_id))
             self.request = retry(super().request)
 
     def get_daily_reward(self) -> None:

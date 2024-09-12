@@ -42,6 +42,7 @@ class MessageEnum(StrEnum):
 
     MSG_SUCCESSFUL_PROMO_APPLY = "Ключ {code} успешно применён"
     MSG_NEW_GAME_FOUND = "Найдена новая игра с promo_id = {promo_id}"
+    MSG_NEW_GAME_NOT_FOUND = "Игра с promo_id = {promo_id} не найдена в списке игр."
     MSG_GENERATE_KEYS_GAME = "Генерация ключей для {game}..."
     MSG_UNSUCCESSFUL_PROMO_APPLY = "Ошибка применения ключа {code}"
     MSG_UNSUCCESSFUL_EMULATE_PROGRESS = "Ошибка эмулирования игрового процесса {err}"
