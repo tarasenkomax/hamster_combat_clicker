@@ -64,6 +64,6 @@ MINI_GAMES = {
         'name': 'Bouncemasters',
         'app_token': 'bc72d3b9-8e91-4884-9c33-f72482f0db37',
         'events_delay': 20,
-        'attempts_number': 20,
+        'attempts_number': 30,
     },
 }
