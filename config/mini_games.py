@@ -66,4 +66,10 @@ MINI_GAMES = {
         'events_delay': 20,
         'attempts_number': 30,
     },
+    '4bf4966c-4d22-439b-8ff2-dc5ebca1a600': {
+        'name': 'Hide Ball',
+        'app_token': '4bf4966c-4d22-439b-8ff2-dc5ebca1a600',
+        'events_delay': 30,
+        'attempts_number': 20,
+    },
 }
