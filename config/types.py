@@ -2,7 +2,7 @@ from typing import List, Literal, TypedDict
 from uuid import UUID
 
 
-class AccountDict(TypedDict):
+class Account(TypedDict):
     """
     name(str) -> Имя аккаунта, отображаемое в логах
     token -> Brearer токен аккаунта

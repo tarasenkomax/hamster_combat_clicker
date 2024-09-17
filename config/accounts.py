@@ -1,8 +1,8 @@
 from typing import List
 
-from config.types import AccountDict
+from config.types import Account
 
-ACCOUNTS: List[AccountDict] = [
+ACCOUNTS: List[Account] = [
     {
         "name": "М",
         "token": "172579871588917jmQz7wKeLMDZNdAhlwWlAEnT9Fk8x12FQWk3QRDvFmI6TR0LYDGl9p5Cw4MwCK398277120",
