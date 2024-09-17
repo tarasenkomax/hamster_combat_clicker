@@ -5,7 +5,7 @@ from config.types import AccountDict
 ACCOUNTS: List[AccountDict] = [
     {
         "name": "М",
-        "token": "1718258846672jWREfRSgL4yNjHPDli8Uxw7MMQHByewbJ4HMBWTUmA0CH1KhKNktAwff2QDC2xyE398277120",
+        "token": "172579871588917jmQz7wKeLMDZNdAhlwWlAEnT9Fk8x12FQWk3QRDvFmI6TR0LYDGl9p5Cw4MwCK398277120",
         "buy_upgrades": True,
         "buy_decision_method": "profitability",
     },
