@@ -78,4 +78,10 @@ MINI_GAMES = {
         'events_delay': 20,
         'attempts_number': 20,
     },
+    '4bdc17da-2601-449b-948e-f8c7bd376553': {
+        'name': 'Count Masters',
+        'app_token': '4bdc17da-2601-449b-948e-f8c7bd376553',
+        'events_delay': 20,
+        'attempts_number': 20,
+    },
 }
