@@ -73,7 +73,7 @@ MINI_GAMES = {
         'attempts_number': 20,
     },
     'd2378baf-d617-417a-9d99-d685824335f0': {
-        'name': 'Pin Out Maste',
+        'name': 'Pin Out Master',
         'app_token': 'd2378baf-d617-417a-9d99-d685824335f0',
         'events_delay': 20,
         'attempts_number': 20,
