@@ -75,7 +75,7 @@ MINI_GAMES = {
     'd2378baf-d617-417a-9d99-d685824335f0': {
         'name': 'Pin Out Master',
         'app_token': 'd2378baf-d617-417a-9d99-d685824335f0',
-        'events_delay': 20,
+        'events_delay': 30,
         'attempts_number': 20,
     },
     '4bdc17da-2601-449b-948e-f8c7bd376553': {
@@ -96,10 +96,10 @@ MINI_GAMES = {
         'events_delay': 20,
         'attempts_number': 20,
     },
-    # 'd02fc404-8985-4305-87d8-32bd4e66bb16': {
-    #     'name': 'Factory World',
-    #     'app_token': 'd02fc404-8985-4305-87d8-32bd4e66bb16',
-    #     'events_delay': 20,
-    #     'attempts_number': 20,
-    # },
+    'd02fc404-8985-4305-87d8-32bd4e66bb16': {
+        'name': 'Factory World',
+        'app_token': 'd02fc404-8985-4305-87d8-32bd4e66bb16',
+        'events_delay': 20,
+        'attempts_number': 20,
+    },
 }
